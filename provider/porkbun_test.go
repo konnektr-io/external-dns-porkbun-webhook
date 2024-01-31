@@ -12,14 +12,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package netcup
+package porkbun
 
 import (
 	"context"
 	"os"
 	"testing"
 
-	nc "github.com/aellwein/netcup-dns-api/pkg/v1"
+	pb "github.com/nrdcg/porkbun"
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
@@ -29,7 +29,7 @@ import (
 	"sigs.k8s.io/external-dns/plan"
 )
 
-func TestNetcupProvider(t *testing.T) {
+func TestPorkbunProvider(t *testing.T) {
 	t.Run("EndpointZoneName", testEndpointZoneName)
 	t.Run("GetIDforRecord", testGetIDforRecord)
 	t.Run("ConvertToNetcupRecord", testConvertToNetcupRecord)
@@ -74,30 +74,27 @@ func testGetIDforRecord(t *testing.T) {
 	target2 := "5.5.5.5"
 	recordType := "TXT"
 
-	nc1 := nc.DnsRecord{
-		Hostname:     "foo.example.com",
-		Type:         "TXT",
-		Destination:  "heritage=external-dns,external-dns/owner=default,external-dns/resource=service/default/nginx",
-		Id:           "10",
-		DeleteRecord: false,
+	nc1 := pb.Record{
+		Name:    "foo.example.com",
+		Type:    "TXT",
+		Content: "heritage=external-dns,external-dns/owner=default,external-dns/resource=service/default/nginx",
+		ID:      "10",
 	}
-	nc2 := nc.DnsRecord{
-		Hostname:     "foo.foo.org",
-		Type:         "A",
-		Destination:  "5.5.5.5",
-		Id:           "10",
-		DeleteRecord: false,
+	nc2 := pb.Record{
+		Name:    "foo.foo.org",
+		Type:    "A",
+		Content: "5.5.5.5",
+		ID:      "10",
 	}
 
-	nc3 := nc.DnsRecord{
-		Id:           "",
-		Hostname:     "baz.org",
-		Type:         "A",
-		Destination:  "5.5.5.5",
-		DeleteRecord: false,
+	nc3 := pb.Record{
+		ID:      "",
+		Name:    "baz.org",
+		Type:    "A",
+		Content: "5.5.5.5",
 	}
 
-	ncRecordList := []nc.DnsRecord{nc1, nc2, nc3}
+	ncRecordList := []pb.Record{nc1, nc2, nc3}
 
 	assert.Equal(t, "10", getIDforRecord(recordName, target1, recordType, &ncRecordList))
 	assert.Equal(t, "", getIDforRecord(recordName, target2, recordType, &ncRecordList))
@@ -134,50 +131,37 @@ func testConvertToNetcupRecord(t *testing.T) {
 
 	epList := []*endpoint.Endpoint{&ep1, &ep2, &ep3, &ep4}
 
-	nc1 := nc.DnsRecord{
-		Hostname:     "foo",
-		Type:         "A",
-		Destination:  "5.5.5.5",
-		Id:           "10",
-		DeleteRecord: false,
+	nc1 := pb.Record{
+		Name:    "foo",
+		Type:    "A",
+		Content: "5.5.5.5",
+		ID:      "10",
 	}
-	nc2 := nc.DnsRecord{
-		Hostname:     "foo.foo.org",
-		Type:         "A",
-		Destination:  "5.5.5.5",
-		Id:           "15",
-		DeleteRecord: false,
+	nc2 := pb.Record{
+		Name:    "foo.foo.org",
+		Type:    "A",
+		Content: "5.5.5.5",
+		ID:      "15",
 	}
 
-	nc3 := nc.DnsRecord{
-		Id:           "",
-		Hostname:     "@",
-		Type:         "A",
-		Destination:  "5.5.5.5",
-		DeleteRecord: false,
+	nc3 := pb.Record{
+		ID:      "",
+		Name:    "@",
+		Type:    "A",
+		Content: "5.5.5.5",
 	}
 
-	nc4 := nc.DnsRecord{
-		Id:           "",
-		Hostname:     "foo.baz.org",
-		Type:         "TXT",
-		Destination:  "heritage=external-dns,external-dns/owner=default,external-dns/resource=service/default/nginx",
-		DeleteRecord: false,
+	nc4 := pb.Record{
+		ID:      "",
+		Name:    "foo.baz.org",
+		Type:    "TXT",
+		Content: "heritage=external-dns,external-dns/owner=default,external-dns/resource=service/default/nginx",
 	}
 
-	ncRecordList := []nc.DnsRecord{nc1, nc2, nc3, nc4}
+	ncRecordList := []pb.Record{nc1, nc2, nc3, nc4}
 
 	// No deletion
-	assert.Equal(t, convertToNetcupRecord(&ncRecordList, epList, "bar.org", false), &ncRecordList)
-	// Deletion active
-
-	nc1.DeleteRecord = true
-	nc2.DeleteRecord = true
-	nc3.DeleteRecord = true
-	nc4.DeleteRecord = true
-	ncRecordList2 := []nc.DnsRecord{nc1, nc2, nc3, nc4}
-	assert.Equal(t, convertToNetcupRecord(&ncRecordList2, epList, "bar.org", true), &ncRecordList2)
-
+	assert.Equal(t, convertToPorkbunRecord(&ncRecordList, epList, "bar.org", false), &ncRecordList)
 }
 
 func testNewNetcupProvider(t *testing.T) {
@@ -187,21 +171,18 @@ func testNewNetcupProvider(t *testing.T) {
 	logger = level.NewFilter(logger, level.Allow(level.InfoValue()))
 	logger = log.With(logger, "ts", log.DefaultTimestampUTC, "caller", log.DefaultCaller)
 
-	p, err := NewNetcupProvider(&domainFilter, 10, "KEY", "PASSWORD", true, logger)
+	p, err := NewPorkbunProvider(&domainFilter, "KEY", "PASSWORD", true, logger)
 	assert.NotNil(t, p.client)
 	assert.NoError(t, err)
 
-	_, err = NewNetcupProvider(&domainFilter, 0, "KEY", "PASSWORD", true, logger)
+	_, err = NewPorkbunProvider(&domainFilter, "", "PASSWORD", true, logger)
 	assert.Error(t, err)
 
-	_, err = NewNetcupProvider(&domainFilter, 10, "", "PASSWORD", true, logger)
-	assert.Error(t, err)
-
-	_, err = NewNetcupProvider(&domainFilter, 10, "KEY", "", true, logger)
+	_, err = NewPorkbunProvider(&domainFilter, "KEY", "", true, logger)
 	assert.Error(t, err)
 
 	emptyDomainFilter := []string{}
-	_, err = NewNetcupProvider(&emptyDomainFilter, 10, "KEY", "PASSWORD", true, logger)
+	_, err = NewPorkbunProvider(&emptyDomainFilter, "KEY", "PASSWORD", true, logger)
 	assert.Error(t, err)
 
 }
@@ -213,7 +194,7 @@ func testApplyChanges(t *testing.T) {
 	logger = level.NewFilter(logger, level.Allow(level.InfoValue()))
 	logger = log.With(logger, "ts", log.DefaultTimestampUTC, "caller", log.DefaultCaller)
 
-	p, _ := NewNetcupProvider(&domainFilter, 10, "KEY", "PASSWORD", true, logger)
+	p, _ := NewPorkbunProvider(&domainFilter, "KEY", "PASSWORD", true, logger)
 	changes1 := &plan.Changes{
 		Create:    []*endpoint.Endpoint{},
 		Delete:    []*endpoint.Endpoint{},
@@ -277,7 +258,7 @@ func testRecords(t *testing.T) {
 	logger = level.NewFilter(logger, level.Allow(level.InfoValue()))
 	logger = log.With(logger, "ts", log.DefaultTimestampUTC, "caller", log.DefaultCaller)
 
-	p, _ := NewNetcupProvider(&domainFilter, 10, "KEY", "PASSWORD", true, logger)
+	p, _ := NewPorkbunProvider(&domainFilter, "KEY", "PASSWORD", true, logger)
 	ep, err := p.Records(context.TODO())
 	assert.Equal(t, []*endpoint.Endpoint{}, ep)
 	assert.NoError(t, err)

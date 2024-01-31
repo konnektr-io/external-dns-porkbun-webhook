@@ -1,7 +1,7 @@
 VERSION := $(shell cat VERSION)
 GIT_COMMIT := $(shell git rev-parse HEAD)
 BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
-PROJECT := external-dns-netcup-webhook 
+PROJECT := external-dns-porkbun-webhook 
 PKG := github.com/prometheus/common
 
 .PHONY: build

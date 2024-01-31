@@ -1,11 +1,11 @@
-module github.com/mrueg/external-dns-netcup-webhook
+module github.com/fcomuniz/external-dns-porkbun-webhook
 
 go 1.21
 
 require (
-	github.com/aellwein/netcup-dns-api v1.0.3
 	github.com/alecthomas/kingpin/v2 v2.4.0
 	github.com/go-kit/log v0.2.1
+	github.com/nrdcg/porkbun v0.3.0
 	github.com/oklog/run v1.1.0
 	github.com/prometheus/client_golang v1.18.0
 	github.com/prometheus/common v0.46.0

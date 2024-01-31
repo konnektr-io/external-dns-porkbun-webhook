@@ -1,27 +1,27 @@
-# external-dns-netcup-webhook
+# external-dns-porkbun-webhook
 
-External-DNS Webhook Provider to manage Netcup DNS Records
+External-DNS Webhook Provider to manage Porkbun DNS Records
 
 > [!NOTE]
-> This repository is not affiliated with Netcup.
+> This repository is not affiliated with Porkbun.
 
 > [!WARNING]
 > Completely untested code. Might eat your DNS records. You have been warned.
 
 
-## Setting up external-dns for Netcup
+## Setting up external-dns for Porkbun
 
-This tutorial describes how to setup external-dns for usage within a Kubernetes cluster using Netcup as the domain provider.
+This tutorial describes how to setup external-dns for usage within a Kubernetes cluster using Porkbun as the domain provider.
 
 Make sure to use external-dns version 0.14.0 or later for this tutorial.
 
-### Creating Netcup Credentials
+### Creating Porkbun Credentials
 
-A secret containing the a Netcup API token and an API Password is needed for this provider. You can get a token for your user [here](https://www.customercontrolpanel.de/daten_aendern.php?sprung=api).
+A secret containing the a Porkbun API token and an API Password is needed for this provider. You can get a token for your user [here](https://porkbun.com/account/api).
 
-To create the API token secret you can run `kubectl create secret generic netcup-api-key --from-literal=NETCUP_API_KEY=<replace-with-your-access-token>`.
+To create the API token secret you can run `kubectl create secret generic porkbun-api-key --from-literal=PORKBUN_API_KEY=<replace-with-your-access-token>`.
 
-To create the API password secret you can run `kubectl create secret generic netcup-api-password --from-literal=NETCUP_API_PASSWORD=<replace-with-your-access-token>`.
+To create the API password secret you can run `kubectl create secret generic portkbun-api-secret --from-literal=PORKBUN_API_SECRET=<replace-with-your-access-token>`.
 
 ### Deploy external-dns
 
@@ -95,23 +95,23 @@ spec:
         - --source=service
         - --provider=webhook
       - name: external-dns-webhook-provider
-        image: ghcr.io/mrueg/external-dns-netcup-webhook:latest
+        image: ghcr.io/fcomuniz/external-dns-porkbun-webhook:latest
         imagePullPolicy: Always
         args:
         - --log-level=debug
         - --domain-filter=YOUR_DOMAIN
-        - --netcup-customer-id=YOUR_ID
+        - --porkbun-customer-id=YOUR_ID
         env:
-        - name: NETCUP_API_KEY
+        - name: PORKBUN_API_KEY
           valueFrom:
             secretKeyRef:
-              key: NETCUP_API_KEY
-              name: netcup-api-key
-        - name: NETCUP_API_PASSWORD
+              key: PORKBUN_API_KEY
+              name: porkbun-api-key
+        - name: PORKBUN_API_SECRET
           valueFrom:
             secretKeyRef:
-              key: NETCUP_API_PASSWORD
-              name: netcup-api-password
+              key: PORKBUN_API_SECRET
+              name: porkbun-api-secret
 
 ```
 
@@ -161,7 +161,7 @@ spec:
       targetPort: 80
 ```
 
-Note the annotation on the service; use the same hostname as the Netcup DNS zone created above. The annotation may also be a subdomain
+Note the annotation on the service; use the same hostname as the Porkbun DNS zone created above. The annotation may also be a subdomain
 of the DNS zone (e.g. 'www.example.com').
 
 By setting the TTL annotation on the service, you have to pass a valid TTL, which must be 120 or above.
@@ -173,11 +173,11 @@ will cause external-dns to remove the corresponding DNS records.
 Depending where you run your service it can take a little while for your cloud provider to create an external IP for the service.
 
 Once the service has an external IP assigned, external-dns will notice the new service IP address and synchronize
-the Netcup DNS records.
+the Porkbun DNS records.
 
-### Verifying Netcup DNS records
+### Verifying Porkbun DNS records
 
-Check your [Netcup domain overview](https://www.customercontrolpanel.de/domains.php) to view the domains associated with your Netcup account. There you can view the records for each domain.
+Check your [Porkbun domain overview](https://porkbun.com/account/domainsSpeedy) to view the domains associated with your Porkbun account. There you can view the records for each domain.
 
 The records should show the external IP address of the service as the A record for your domain.
 
