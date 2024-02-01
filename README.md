@@ -6,7 +6,7 @@ External-DNS Webhook Provider to manage Porkbun DNS Records
 > This repository is not affiliated with Porkbun.
 
 > [!WARNING]
-> Completely untested code. Might eat your DNS records. You have been warned.
+> Completely untested code.
 
 
 ## Setting up external-dns for Porkbun
@@ -95,23 +95,23 @@ spec:
         - --source=service
         - --provider=webhook
       - name: external-dns-webhook-provider
-        image: ghcr.io/fcomuniz/external-dns-porkbun-webhook:latest
+        image: ghcr.io/mrueg/external-dns-netcup-webhook:latest
         imagePullPolicy: Always
         args:
         - --log-level=debug
         - --domain-filter=YOUR_DOMAIN
-        - --porkbun-customer-id=YOUR_ID
+        - --netcup-customer-id=YOUR_ID
         env:
-        - name: PORKBUN_API_KEY
+        - name: NETCUP_API_KEY
           valueFrom:
             secretKeyRef:
-              key: PORKBUN_API_KEY
-              name: porkbun-api-key
-        - name: PORKBUN_API_SECRET
+              key: NETCUP_API_KEY
+              name: netcup-api-key
+        - name: NETCUP_API_PASSWORD
           valueFrom:
             secretKeyRef:
-              key: PORKBUN_API_SECRET
-              name: porkbun-api-secret
+              key: NETCUP_API_PASSWORD
+              name: netcup-api-password
 
 ```
 
