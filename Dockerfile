@@ -6,5 +6,5 @@ RUN apk --no-cache add make git && make build
 
 FROM alpine:3.18
 
-COPY --from=builder /app/external-dns-netcup-webhook /
-ENTRYPOINT ["/external-dns-netcup-webhook"]
+COPY --from=builder /app/external-dns-porkbun-webhook /
+ENTRYPOINT ["/external-dns-porkbun-webhook"]
