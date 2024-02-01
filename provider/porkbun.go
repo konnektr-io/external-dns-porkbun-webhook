@@ -68,7 +68,6 @@ func (p *PorkbunProvider) UpdateDnsRecords(ctx context.Context, zone string, rec
 		if err != nil {
 			return "", fmt.Errorf("unable to update record: %v", err)
 		}
-		return "", nil
 	}
 	return "", nil
 }
