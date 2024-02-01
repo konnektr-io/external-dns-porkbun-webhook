@@ -58,6 +58,30 @@ func NewPorkbunProvider(domainFilterList *[]string, apiKey string, apiSecret str
 	}, nil
 }
 
+func (p *PorkbunProvider) CreateDnsRecords(ctx context.Context, zone string, records *[]pb.Record) (string, error) {
+	for _, record := range *records {
+		_, err := p.client.CreateRecord(ctx, zone, record)
+		if err != nil {
+			return "", fmt.Errorf("unable to create record: %v", err)
+		}
+	}
+	return "", nil
+}
+
+func (p *PorkbunProvider) DeleteDnsRecords(ctx context.Context, zone string, records *[]pb.Record) (string, error) {
+	for _, record := range *records {
+		id, err := strconv.Atoi(record.ID)
+		if err != nil {
+			return "", fmt.Errorf("unable to parse record ID: %v", err)
+		}
+		err = p.client.DeleteRecord(ctx, zone, id)
+		if err != nil {
+			return "", fmt.Errorf("unable to delete record: %v", err)
+		}
+	}
+	return "", nil
+}
+
 func (p *PorkbunProvider) UpdateDnsRecords(ctx context.Context, zone string, records *[]pb.Record) (string, error) {
 	for _, record := range *records {
 		id, err := strconv.Atoi(record.ID)
@@ -201,11 +225,11 @@ func (p *PorkbunProvider) ApplyChanges(ctx context.Context, changes *plan.Change
 		if err != nil {
 			return err
 		}
-		_, err = p.UpdateDnsRecords(ctx, zoneName, change.Delete)
+		_, err = p.DeleteDnsRecords(ctx, zoneName, change.Delete)
 		if err != nil {
 			return err
 		}
-		_, err = p.UpdateDnsRecords(ctx, zoneName, change.Create)
+		_, err = p.CreateDnsRecords(ctx, zoneName, change.Create)
 		if err != nil {
 			return err
 		}
@@ -271,11 +295,11 @@ func endpointZoneName(endpoint *endpoint.Endpoint, zones []string) (zone string)
 
 // ensureLogin makes sure that we are logged in to Netcup API.
 func (p *PorkbunProvider) ensureLogin(ctx context.Context) error {
-	_ = level.Debug(p.logger).Log("msg", "performing login to Netcup DNS API")
+	_ = level.Debug(p.logger).Log("msg", "performing login to Porkbun API")
 	_, err := p.client.Ping(ctx)
 	if err != nil {
 		return err
 	}
-	_ = level.Debug(p.logger).Log("msg", "successfully logged in to Netcup DNS API")
+	_ = level.Debug(p.logger).Log("msg", "successfully logged in to Porkbun API")
 	return nil
 }
