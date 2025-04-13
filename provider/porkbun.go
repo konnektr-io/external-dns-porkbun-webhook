@@ -48,6 +48,8 @@ func NewPorkbunProvider(domainFilterList *[]string, apiKey string, apiSecret str
 		return nil, fmt.Errorf("porkbun provider requires an API Password")
 	}
 
+	_ = level.Debug(logger).Log("msg", "creating porkbun provider", "api-key", apiKey, "api-secret", apiSecret)
+
 	client := pb.New(apiSecret, apiKey)
 
 	return &PorkbunProvider{
