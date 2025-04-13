@@ -5,9 +5,6 @@ External-DNS Webhook Provider to manage Porkbun DNS Records
 > [!NOTE]
 > This repository is not affiliated with Porkbun.
 
-> [!WARNING]
-> Completely untested code.
-
 ## Setting up external-dns for Porkbun
 
 This tutorial describes how to setup external-dns for usage within a Kubernetes cluster using Porkbun as the domain provider.
@@ -28,7 +25,7 @@ Besides the API key and password, it is mandatory to provide a list of DNS zones
 
 Then apply one of the following manifests file to deploy external-dns.
 
-```
+```bash
 kubectl create -f example/external-dns.yaml
 ```
 
@@ -115,7 +112,7 @@ spec:
 
 Create the deployment and service:
 
-```
+```bash
 kubectl create -f example/nginx.yaml
 ```
 
@@ -180,7 +177,7 @@ The records should show the external IP address of the service as the A record f
 
 Now that we have verified that external-dns will automatically manage Netcup DNS records, we can delete the tutorial's example:
 
-```
+```bash
 kubectl delete -f example/nginx.yaml
 kubectl delete -f example/external-dns.yaml
 ```
