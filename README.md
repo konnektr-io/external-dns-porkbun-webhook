@@ -89,10 +89,10 @@ spec:
         - --provider=webhook
       - name: external-dns-webhook-provider
         image: ghcr.io/nikoraes/external-dns-porkbun-webhook:main
-        imagePullPolicy: Always
-        args:
-        - --log-level=debug
+        imagePullPolicy: IfNotPresent
         env:
+        - name: GO_LOG
+          value: "debug"
         - name: DOMAIN_FILTER
           value: YOUR_DOMAIN
         - name: API_KEY

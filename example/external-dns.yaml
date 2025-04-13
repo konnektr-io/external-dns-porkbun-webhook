@@ -64,7 +64,7 @@ spec:
         - --provider=webhook
       - name: external-dns-webhook-provider
         image: ghcr.io/nikoraes/external-dns-porkbun-webhook:main
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         resources:
           requests:
             memory: "64Mi"
@@ -72,10 +72,9 @@ spec:
           limits:
             memory: "128Mi"
             cpu: "500m"
-
-        args:
-        - --log-level=debug
         env:
+        - name: GO_LOG
+          value: "debug"
         - name: DOMAIN_FILTER
           value: YOUR_DOMAIN
         - name: API_KEY

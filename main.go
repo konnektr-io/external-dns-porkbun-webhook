@@ -22,8 +22,6 @@ import (
 )
 
 var (
-	logFormat         = kingpin.Flag("log-format", "The format in which log messages are printed (default: text, options: logfmt, json)").Default("logfmt").Envar("LOG_FORMAT").String()
-	logLevel          = kingpin.Flag("log-level", "Set the level of logging. (default: info, options: panic, debug, info, warning, error, fatal)").Default("info").Envar("LOG_LEVEL").String()
 	listenAddr        = kingpin.Flag("listen-address", "The address this plugin listens on").Default(":8888").Envar("LISTEN_ADDRESS").String()
 	metricsListenAddr = kingpin.Flag("metrics-listen-address", "The address this plugin provides metrics on").Default(":8889").Envar("METRICS_LISTEN_ADDRESS").String()
 	tlsConfig         = kingpin.Flag("tls-config", "Path to TLS config file.").Envar("TLS_CONFIG").Default("").String()
@@ -41,7 +39,7 @@ func main() {
 	kingpin.Version(version.Info())
 	kingpin.Parse()
 
-	var logger *slog.Logger = promslog.New(promslogConfig)
+	var logger = promslog.New(promslogConfig)
 	logger.Info("starting external-dns Porkbun webhook plugin", "version", version.Version, "revision", version.Revision)
 	logger.Debug("configuration", "cdomain-filter", fmt.Sprintf("%s", *domainFilter), "api-key", *apiKey, "api-secret", *apiSecret)
 
