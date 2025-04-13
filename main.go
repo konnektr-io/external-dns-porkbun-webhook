@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/alecthomas/kingpin/v2"
-	porkbun "github.com/fcomuniz/external-dns-porkbun-webhook/provider"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
+	porkbun "github.com/nikoraes/external-dns-porkbun-webhook/provider"
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -50,7 +50,7 @@ func main() {
 	logger = level.NewFilter(logger, level.Allow(level.ParseDefault(*logLevel, level.InfoValue())))
 	logger = log.With(logger, "ts", log.DefaultTimestampUTC, "caller", log.DefaultCaller)
 	_ = level.Info(logger).Log("msg", "starting external-dns Porkbun webhook plugin", "version", version.Version, "revision", version.Revision)
-	_ = level.Debug(logger).Log("domain-filter", *domainFilter, "api-key", *apiKey, "api-secret", *apiSecret)
+	_ = level.Debug(logger).Log("domain-filter", fmt.Sprintf("%s", *domainFilter), "api-key", *apiKey, "api-secret", *apiSecret)
 
 	prometheus.DefaultRegisterer.MustRegister(version.NewCollector("external_dns_porkbun"))
 

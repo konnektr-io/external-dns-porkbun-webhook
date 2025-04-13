@@ -1,16 +1,16 @@
-module github.com/fcomuniz/external-dns-porkbun-webhook
+module github.com/nikoraes/external-dns-porkbun-webhook
 
 go 1.21
 
 require (
 	github.com/alecthomas/kingpin/v2 v2.4.0
 	github.com/go-kit/log v0.2.1
-	github.com/nrdcg/porkbun v0.3.0
+	github.com/nrdcg/porkbun v0.4.0
 	github.com/oklog/run v1.1.0
 	github.com/prometheus/client_golang v1.18.0
 	github.com/prometheus/common v0.46.0
 	github.com/prometheus/exporter-toolkit v0.11.0
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.9.0
 	sigs.k8s.io/external-dns v0.14.1-0.20240103083843-0e98260b69ab
 )
 
