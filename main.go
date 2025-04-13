@@ -9,13 +9,13 @@ import (
 	"time"
 
 	"github.com/alecthomas/kingpin/v2"
-	"github.com/go-kit/log"
-	"github.com/go-kit/log/level"
 	porkbun "github.com/nikoraes/external-dns-porkbun-webhook/provider"
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/collectors"
+	cversion "github.com/prometheus/client_golang/prometheus/collectors/version"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/prometheus/common/promslog"
+	"github.com/prometheus/common/promslog/flag"
 	"github.com/prometheus/common/version"
 	"github.com/prometheus/exporter-toolkit/web"
 	webhook "sigs.k8s.io/external-dns/provider/webhook/api"
@@ -36,26 +36,16 @@ var (
 
 func main() {
 
+	promslogConfig := &promslog.Config{}
+	flag.AddFlags(kingpin.CommandLine, promslogConfig)
 	kingpin.Version(version.Info())
 	kingpin.Parse()
 
-	var logger log.Logger
-	var sLogger *slog.Logger
-	switch *logFormat {
-	case "json":
-		logger = log.NewJSONLogger(log.NewSyncWriter(os.Stderr))
-	case "logfmt":
-		logger = log.NewLogfmtLogger(log.NewSyncWriter(os.Stderr))
-	default:
-		fmt.Printf("Error: Unknown log format: %s\n", *logFormat)
-		os.Exit(1)
-	}
-	logger = level.NewFilter(logger, level.Allow(level.ParseDefault(*logLevel, level.InfoValue())))
-	logger = log.With(logger, "ts", log.DefaultTimestampUTC, "caller", log.DefaultCaller)
-	_ = level.Info(logger).Log("msg", "starting external-dns Porkbun webhook plugin", "version", version.Version, "revision", version.Revision)
-	_ = level.Debug(logger).Log("domain-filter", fmt.Sprintf("%s", *domainFilter), "api-key", *apiKey, "api-secret", *apiSecret)
+	var logger *slog.Logger = promslog.New(promslogConfig)
+	logger.Info("starting external-dns Porkbun webhook plugin", "version", version.Version, "revision", version.Revision)
+	logger.Debug("configuration", "cdomain-filter", fmt.Sprintf("%s", *domainFilter), "api-key", *apiKey, "api-secret", *apiSecret)
 
-	prometheus.DefaultRegisterer.MustRegister(collectors.NewBuildInfoCollector())
+	prometheus.DefaultRegisterer.MustRegister(cversion.NewCollector("external_dns_netcup"))
 
 	metricsMux := buildMetricsServer(prometheus.DefaultGatherer, logger)
 	metricsServer := http.Server{
@@ -70,7 +60,7 @@ func main() {
 
 	webhookMux, err := buildWebhookServer(logger)
 	if err != nil {
-		_ = level.Error(logger).Log("msg", "Failed to create provider", "error", err)
+		logger.Error("Failed to create provider", "error", err.Error())
 		os.Exit(1)
 	}
 	webhookServer := http.Server{
@@ -88,8 +78,8 @@ func main() {
 	// Run Metrics server
 	{
 		g.Add(func() error {
-			_ = level.Info(logger).Log("msg", "Started external-dns-porkbun-webhook metrics server", "address", metricsListenAddr)
-			return web.ListenAndServe(&metricsServer, &metricsFlags, sLogger)
+			logger.Info("Started external-dns-porkbun-webhook metrics server", "address", metricsListenAddr)
+			return web.ListenAndServe(&metricsServer, &metricsFlags, logger)
 		}, func(error) {
 			ctxShutDown, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 			defer cancel()
@@ -99,8 +89,8 @@ func main() {
 	// Run webhook API server
 	{
 		g.Add(func() error {
-			_ = level.Info(logger).Log("msg", "Started external-dns-porkbun-webhook webhook server", "address", listenAddr)
-			return web.ListenAndServe(&webhookServer, &webhookFlags, sLogger)
+			logger.Info("Started external-dns-porkbun-webhook webhook server", "address", listenAddr)
+			return web.ListenAndServe(&webhookServer, &webhookFlags, logger)
 		}, func(error) {
 			ctxShutDown, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 			defer cancel()
@@ -109,13 +99,13 @@ func main() {
 	}
 
 	if err := g.Run(); err != nil {
-		_ = level.Error(logger).Log("msg", "run server group error", "error", err)
+		logger.Error("run server group error", "error", err.Error())
 		os.Exit(1)
 	}
 
 }
 
-func buildMetricsServer(registry prometheus.Gatherer, logger log.Logger) *http.ServeMux {
+func buildMetricsServer(registry prometheus.Gatherer, logger *slog.Logger) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	var metricsPath = "/metrics"
@@ -142,14 +132,14 @@ func buildMetricsServer(registry prometheus.Gatherer, logger log.Logger) *http.S
 	}
 	landingPage, err := web.NewLandingPage(landingConfig)
 	if err != nil {
-		_ = level.Error(logger).Log("msg", "failed to create landing page", "error", err)
+		logger.Error("failed to create landing page", "error", err.Error())
 	}
 	mux.Handle(rootPath, landingPage)
 
 	return mux
 }
 
-func buildWebhookServer(logger log.Logger) (*http.ServeMux, error) {
+func buildWebhookServer(logger *slog.Logger) (*http.ServeMux, error) {
 	mux := http.NewServeMux()
 
 	var rootPath = "/"
