@@ -50,11 +50,6 @@ spec:
       containers:
       - name: external-dns
         image: registry.k8s.io/external-dns/external-dns:v0.14.0
-        args:
-        - --log-level=debug
-        - --source=ingress
-        - --source=service
-        - --provider=webhook
         resources:
           requests:
             memory: "64Mi"
@@ -62,9 +57,22 @@ spec:
           limits:
             memory: "128Mi"
             cpu: "500m"
+        args:
+        - --log-level=debug
+        - --source=ingress
+        - --source=service
+        - --provider=webhook
       - name: external-dns-webhook-provider
         image: ghcr.io/nikoraes/external-dns-porkbun-webhook:main
         imagePullPolicy: Always
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+
         args:
         - --log-level=debug
         env:
@@ -80,11 +88,3 @@ spec:
             secretKeyRef:
               name: porkbun-secret
               key: API_SECRET
-        resources:
-          requests:
-            memory: "64Mi"
-            cpu: "250m"
-          limits:
-            memory: "128Mi"
-            cpu: "500m"
-

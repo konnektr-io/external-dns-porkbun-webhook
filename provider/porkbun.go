@@ -244,7 +244,7 @@ func (p *PorkbunProvider) ApplyChanges(ctx context.Context, changes *plan.Change
 	return nil
 }
 
-// convertToPorkbunRecord transforms a list of endpoints into a list of Netcup DNS Records
+// convertToPorkbunRecord transforms a list of endpoints into a list of Porkbun DNS Records
 // returns a pointer to a list of DNS Records
 func convertToPorkbunRecord(recs *[]pb.Record, endpoints []*endpoint.Endpoint, zoneName string, DeleteRecord bool) *[]pb.Record {
 	records := make([]pb.Record, len(endpoints))
@@ -269,7 +269,7 @@ func convertToPorkbunRecord(recs *[]pb.Record, endpoints []*endpoint.Endpoint, z
 	return &records
 }
 
-// getIDforRecord compares the endpoint with existing records to get the ID from Netcup to ensure it can be safely removed.
+// getIDforRecord compares the endpoint with existing records to get the ID from Porkbun to ensure it can be safely removed.
 // returns empty string if no match found
 func getIDforRecord(recordName string, target string, recordType string, recs *[]pb.Record) string {
 	for _, rec := range *recs {
@@ -293,7 +293,7 @@ func endpointZoneName(endpoint *endpoint.Endpoint, zones []string) (zone string)
 	return matchZoneName
 }
 
-// ensureLogin makes sure that we are logged in to Netcup API.
+// ensureLogin makes sure that we are logged in to Porkbun API.
 func (p *PorkbunProvider) ensureLogin(ctx context.Context) error {
 	_ = level.Debug(p.logger).Log("msg", "performing login to Porkbun API")
 	_, err := p.client.Ping(ctx)

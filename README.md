@@ -90,22 +90,14 @@ spec:
         - --source=ingress
         - --source=service
         - --provider=webhook
-        resources:
-          requests:
-            memory: "64Mi"
-            cpu: "250m"
-          limits:
-            memory: "128Mi"
-            cpu: "500m"
       - name: external-dns-webhook-provider
         image: ghcr.io/nikoraes/external-dns-porkbun-webhook:main
         imagePullPolicy: Always
         args:
         - --log-level=debug
-        - --domain-filter=YOUR_DOMAIN
         env:
         - name: DOMAIN_FILTER
-          value: https://ccp.netcup.net/run/webservice/servers/endpoint.php
+          value: YOUR_DOMAIN
         - name: API_KEY
           valueFrom:
             secretKeyRef:
@@ -116,13 +108,6 @@ spec:
             secretKeyRef:
               name: porkbun-secret
               key: API_SECRET
-        resources:
-          requests:
-            memory: "64Mi"
-            cpu: "250m"
-          limits:
-            memory: "128Mi"
-            cpu: "500m"
 
 ```
 

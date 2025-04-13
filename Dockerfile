@@ -8,4 +8,4 @@ FROM alpine:3.18
 
 COPY --from=builder /app/external-dns-porkbun-webhook /
 COPY --from=builder /app/docker/entrypoint.sh /
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["/external-dns-porkbun-webhook"]
