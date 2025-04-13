@@ -32,8 +32,8 @@ import (
 func TestPorkbunProvider(t *testing.T) {
 	t.Run("EndpointZoneName", testEndpointZoneName)
 	t.Run("GetIDforRecord", testGetIDforRecord)
-	t.Run("ConvertToNetcupRecord", testConvertToNetcupRecord)
-	t.Run("NewNetcupProvider", testNewNetcupProvider)
+	t.Run("ConvertToNetcupRecord", testConvertToPorkbunRecord)
+	t.Run("NewNetcupProvider", testNewPorkbunProvider)
 	t.Run("ApplyChanges", testApplyChanges)
 	t.Run("Records", testRecords)
 }
@@ -101,7 +101,7 @@ func testGetIDforRecord(t *testing.T) {
 
 }
 
-func testConvertToNetcupRecord(t *testing.T) {
+func testConvertToPorkbunRecord(t *testing.T) {
 	// in zone list
 	ep1 := endpoint.Endpoint{
 		DNSName:    "foo.bar.org",
@@ -164,7 +164,7 @@ func testConvertToNetcupRecord(t *testing.T) {
 	assert.Equal(t, convertToPorkbunRecord(&ncRecordList, epList, "bar.org", false), &ncRecordList)
 }
 
-func testNewNetcupProvider(t *testing.T) {
+func testNewPorkbunProvider(t *testing.T) {
 	domainFilter := []string{"example.com"}
 	var logger log.Logger
 	logger = log.NewLogfmtLogger(log.NewSyncWriter(os.Stderr))

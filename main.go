@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"time"
@@ -13,6 +14,7 @@ import (
 	porkbun "github.com/nikoraes/external-dns-porkbun-webhook/provider"
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/version"
 	"github.com/prometheus/exporter-toolkit/web"
@@ -38,6 +40,7 @@ func main() {
 	kingpin.Parse()
 
 	var logger log.Logger
+	var sLogger *slog.Logger
 	switch *logFormat {
 	case "json":
 		logger = log.NewJSONLogger(log.NewSyncWriter(os.Stderr))
@@ -52,7 +55,7 @@ func main() {
 	_ = level.Info(logger).Log("msg", "starting external-dns Porkbun webhook plugin", "version", version.Version, "revision", version.Revision)
 	_ = level.Debug(logger).Log("domain-filter", fmt.Sprintf("%s", *domainFilter), "api-key", *apiKey, "api-secret", *apiSecret)
 
-	prometheus.DefaultRegisterer.MustRegister(version.NewCollector("external_dns_porkbun"))
+	prometheus.DefaultRegisterer.MustRegister(collectors.NewBuildInfoCollector())
 
 	metricsMux := buildMetricsServer(prometheus.DefaultGatherer, logger)
 	metricsServer := http.Server{
@@ -86,7 +89,7 @@ func main() {
 	{
 		g.Add(func() error {
 			_ = level.Info(logger).Log("msg", "Started external-dns-porkbun-webhook metrics server", "address", metricsListenAddr)
-			return web.ListenAndServe(&metricsServer, &metricsFlags, logger)
+			return web.ListenAndServe(&metricsServer, &metricsFlags, sLogger)
 		}, func(error) {
 			ctxShutDown, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 			defer cancel()
@@ -97,7 +100,7 @@ func main() {
 	{
 		g.Add(func() error {
 			_ = level.Info(logger).Log("msg", "Started external-dns-porkbun-webhook webhook server", "address", listenAddr)
-			return web.ListenAndServe(&webhookServer, &webhookFlags, logger)
+			return web.ListenAndServe(&webhookServer, &webhookFlags, sLogger)
 		}, func(error) {
 			ctxShutDown, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 			defer cancel()
