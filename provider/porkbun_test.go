@@ -30,8 +30,8 @@ import (
 func TestPorkbunProvider(t *testing.T) {
 	t.Run("EndpointZoneName", testEndpointZoneName)
 	t.Run("GetIDforRecord", testGetIDforRecord)
-	t.Run("ConvertToNetcupRecord", testConvertToPorkbunRecord)
-	t.Run("NewNetcupProvider", testNewPorkbunProvider)
+	t.Run("ConvertToPorkbunRecord", testConvertToPorkbunRecord)
+	t.Run("NewPorkbunProvider", testNewPorkbunProvider)
 	t.Run("ApplyChanges", testApplyChanges)
 	t.Run("Records", testRecords)
 }
