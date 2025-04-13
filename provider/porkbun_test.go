@@ -16,13 +16,11 @@ package porkbun
 
 import (
 	"context"
-	"os"
+	"log/slog"
 	"testing"
 
 	pb "github.com/nrdcg/porkbun"
-
-	"github.com/go-kit/log"
-	"github.com/go-kit/log/level"
+	"github.com/prometheus/common/promslog"
 
 	"github.com/stretchr/testify/assert"
 	"sigs.k8s.io/external-dns/endpoint"
@@ -166,10 +164,9 @@ func testConvertToPorkbunRecord(t *testing.T) {
 
 func testNewPorkbunProvider(t *testing.T) {
 	domainFilter := []string{"example.com"}
-	var logger log.Logger
-	logger = log.NewLogfmtLogger(log.NewSyncWriter(os.Stderr))
-	logger = level.NewFilter(logger, level.Allow(level.InfoValue()))
-	logger = log.With(logger, "ts", log.DefaultTimestampUTC, "caller", log.DefaultCaller)
+	var logger *slog.Logger
+	promslogConfig := &promslog.Config{}
+	logger = promslog.New(promslogConfig)
 
 	p, err := NewPorkbunProvider(&domainFilter, "KEY", "PASSWORD", true, logger)
 	assert.NotNil(t, p.client)
@@ -189,10 +186,9 @@ func testNewPorkbunProvider(t *testing.T) {
 
 func testApplyChanges(t *testing.T) {
 	domainFilter := []string{"example.com"}
-	var logger log.Logger
-	logger = log.NewLogfmtLogger(log.NewSyncWriter(os.Stderr))
-	logger = level.NewFilter(logger, level.Allow(level.InfoValue()))
-	logger = log.With(logger, "ts", log.DefaultTimestampUTC, "caller", log.DefaultCaller)
+	var logger *slog.Logger
+	promslogConfig := &promslog.Config{}
+	logger = promslog.New(promslogConfig)
 
 	p, _ := NewPorkbunProvider(&domainFilter, "KEY", "PASSWORD", true, logger)
 	changes1 := &plan.Changes{
@@ -253,10 +249,9 @@ func testApplyChanges(t *testing.T) {
 
 func testRecords(t *testing.T) {
 	domainFilter := []string{"example.com"}
-	var logger log.Logger
-	logger = log.NewLogfmtLogger(log.NewSyncWriter(os.Stderr))
-	logger = level.NewFilter(logger, level.Allow(level.InfoValue()))
-	logger = log.With(logger, "ts", log.DefaultTimestampUTC, "caller", log.DefaultCaller)
+	var logger *slog.Logger
+	promslogConfig := &promslog.Config{}
+	logger = promslog.New(promslogConfig)
 
 	p, _ := NewPorkbunProvider(&domainFilter, "KEY", "PASSWORD", true, logger)
 	ep, err := p.Records(context.TODO())
