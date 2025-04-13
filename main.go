@@ -20,16 +20,16 @@ import (
 )
 
 var (
-	logFormat         = kingpin.Flag("log-format", "The format in which log messages are printed (default: text, options: logfmt, json)").Default("logfmt").Envar("PORKBUN_LOG_FORMAT").String()
-	logLevel          = kingpin.Flag("log-level", "Set the level of logging. (default: info, options: panic, debug, info, warning, error, fatal)").Default("info").Envar("PORKBUN_LOG_LEVEL").String()
-	listenAddr        = kingpin.Flag("listen-address", "The address this plugin listens on").Default(":8888").Envar("PORKBUN_LISTEN_ADDRESS").String()
-	metricsListenAddr = kingpin.Flag("metrics-listen-address", "The address this plugin provides metrics on").Default(":8889").Envar("PORKBUN_METRICS_LISTEN_ADDRESS").String()
-	tlsConfig         = kingpin.Flag("tls-config", "Path to TLS config file.").Envar("PORKBUN_TLS_CONFIG").Default("").String()
+	logFormat         = kingpin.Flag("log-format", "The format in which log messages are printed (default: text, options: logfmt, json)").Default("logfmt").Envar("LOG_FORMAT").String()
+	logLevel          = kingpin.Flag("log-level", "Set the level of logging. (default: info, options: panic, debug, info, warning, error, fatal)").Default("info").Envar("LOG_LEVEL").String()
+	listenAddr        = kingpin.Flag("listen-address", "The address this plugin listens on").Default(":8888").Envar("LISTEN_ADDRESS").String()
+	metricsListenAddr = kingpin.Flag("metrics-listen-address", "The address this plugin provides metrics on").Default(":8889").Envar("METRICS_LISTEN_ADDRESS").String()
+	tlsConfig         = kingpin.Flag("tls-config", "Path to TLS config file.").Envar("TLS_CONFIG").Default("").String()
 
-	domainFilter = kingpin.Flag("domain-filter", "Limit possible target zones by a domain suffix; specify multiple times for multiple domains").Required().Envar("PORKBUN_DOMAIN_FILTER").Strings()
-	dryRun       = kingpin.Flag("dry-run", "Run without connecting to Porkbun's CCP API").Default("false").Envar("PORKBUN_DRY_RUN").Bool()
-	apiKey       = kingpin.Flag("porkbun-api-key", "The api key to connect to Netcup's CCP API").Required().Envar("PORKBUN_API_KEY").String()
-	apiSecret    = kingpin.Flag("porkbun-api-secret", "The api password to connect to Netcup's CCP API").Required().Envar("PORKBUN_API_PASSWORD").String()
+	domainFilter = kingpin.Flag("domain-filter", "Limit possible target zones by a domain suffix; specify multiple times for multiple domains").Required().Envar("DOMAIN_FILTER").Strings()
+	dryRun       = kingpin.Flag("dry-run", "Run without connecting to Porkbun's API").Default("false").Envar("DRY_RUN").Bool()
+	apiKey       = kingpin.Flag("api-key", "The api key to connect to Porkbun's API").Required().Envar("API_KEY").String()
+	apiSecret    = kingpin.Flag("api-secret", "The api password to connect to Porkbun's API").Required().Envar("API_SECRET").String()
 )
 
 func main() {
@@ -50,7 +50,7 @@ func main() {
 	logger = level.NewFilter(logger, level.Allow(level.ParseDefault(*logLevel, level.InfoValue())))
 	logger = log.With(logger, "ts", log.DefaultTimestampUTC, "caller", log.DefaultCaller)
 	_ = level.Info(logger).Log("msg", "starting external-dns Porkbun webhook plugin", "version", version.Version, "revision", version.Revision)
-	_ = level.Debug(logger).Log("api-key", *apiKey, "api-secret", *apiSecret)
+	_ = level.Debug(logger).Log("domain-filter", *domainFilter, "api-key", *apiKey, "api-secret", *apiSecret)
 
 	prometheus.DefaultRegisterer.MustRegister(version.NewCollector("external_dns_porkbun"))
 

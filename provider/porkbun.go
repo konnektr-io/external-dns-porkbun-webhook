@@ -15,7 +15,7 @@ import (
 	"sigs.k8s.io/external-dns/provider"
 )
 
-// PorkbunProvider is an implementation of Provider for Netcup DNS.
+// PorkbunProvider is an implementation of Provider for porkbun DNS.
 type PorkbunProvider struct {
 	provider.BaseProvider
 	client       *pb.Client
@@ -24,20 +24,20 @@ type PorkbunProvider struct {
 	logger       log.Logger
 }
 
-// NetcupChange includes the changesets that need to be applied to the Netcup CCP API
-type NetcupChange struct {
+// PorkbunChange includes the changesets that need to be applied to the porkbun API
+type PorkbunChange struct {
 	Create    *[]pb.Record
 	UpdateNew *[]pb.Record
 	UpdateOld *[]pb.Record
 	Delete    *[]pb.Record
 }
 
-// NewPorkbunProvider creates a new provider including the netcup CCP API client
+// NewPorkbunProvider creates a new provider including the porkbun API client
 func NewPorkbunProvider(domainFilterList *[]string, apiKey string, apiSecret string, dryRun bool, logger log.Logger) (*PorkbunProvider, error) {
 	domainFilter := endpoint.NewDomainFilter(*domainFilterList)
 
 	if !domainFilter.IsConfigured() {
-		return nil, fmt.Errorf("netcup provider requires at least one configured domain in the domainFilter")
+		return nil, fmt.Errorf("porkbun provider requires at least one configured domain in the domainFilter")
 	}
 
 	if apiKey == "" {
@@ -206,14 +206,14 @@ func (p *PorkbunProvider) ApplyChanges(ctx context.Context, changes *plan.Change
 		return nil
 	}
 
-	// Assemble changes per zone and prepare it for the Netcup API client
+	// Assemble changes per zone and prepare it for the porkbun API client
 	for zoneName, c := range perZoneChanges {
 		// Gather records from API to extract the record ID which is necessary for updating/deleting the record
 		recs, err := p.client.RetrieveRecords(ctx, zoneName)
 		if err != nil {
 			_ = level.Error(p.logger).Log("msg", "unable to get DNS records for domain", "zone", zoneName, "error", err)
 		}
-		change := &NetcupChange{
+		change := &PorkbunChange{
 			Create:    convertToPorkbunRecord(&recs, c.Create, zoneName, false),
 			UpdateNew: convertToPorkbunRecord(&recs, c.UpdateNew, zoneName, false),
 			UpdateOld: convertToPorkbunRecord(&recs, c.UpdateOld, zoneName, true),

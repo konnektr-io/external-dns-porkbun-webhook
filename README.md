@@ -8,7 +8,6 @@ External-DNS Webhook Provider to manage Porkbun DNS Records
 > [!WARNING]
 > Completely untested code.
 
-
 ## Setting up external-dns for Porkbun
 
 This tutorial describes how to setup external-dns for usage within a Kubernetes cluster using Porkbun as the domain provider.
@@ -17,25 +16,22 @@ Make sure to use external-dns version 0.14.0 or later for this tutorial.
 
 ### Creating Porkbun Credentials
 
-A secret containing the a Porkbun API token and an API Password is needed for this provider. You can get a token for your user [here](https://porkbun.com/account/api).
+A secret containing the a Porkbun API key and an API Secret Key is needed for this provider. You can get a token for your user [here](https://porkbun.com/account/api).
 
-To create the API token secret you can run `kubectl create secret generic porkbun-api-key --from-literal=PORKBUN_API_KEY=<replace-with-your-access-token>`.
-
-To create the API password secret you can run `kubectl create secret generic portkbun-api-secret --from-literal=PORKBUN_API_SECRET=<replace-with-your-access-token>`.
+To create the secret you can run `kubectl create secret generic porkbun-secret --from-literal=API_KEY=<replace-with-your-access-token> --from-literal=API_SECRET=<replace-with-your-access-token>`.
 
 ### Deploy external-dns
 
 Connect your `kubectl` client to the cluster you want to test external-dns with.
 
-Besides the API key and password, it is mandatory to provide a customer id as well as a list of DNS zones you want external-dns to manage. The hosted DNS zones will be provides via the `--domain-filter`.
+Besides the API key and password, it is mandatory to provide a list of DNS zones you want external-dns to manage. The hosted DNS zones will be provides via the `--domain-filter`.
 
 Then apply one of the following manifests file to deploy external-dns.
 
 ```
-$ kubectl create -f example/external-dns.yaml
+kubectl create -f example/external-dns.yaml
 ```
 
-[embedmd]:# (example/external-dns.yaml)
 ```yaml
 apiVersion: v1
 kind: ServiceAccount
@@ -94,24 +90,39 @@ spec:
         - --source=ingress
         - --source=service
         - --provider=webhook
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
       - name: external-dns-webhook-provider
-        image: ghcr.io/mrueg/external-dns-netcup-webhook:latest
+        image: ghcr.io/nikoraes/external-dns-porkbun-webhook:main
         imagePullPolicy: Always
         args:
         - --log-level=debug
         - --domain-filter=YOUR_DOMAIN
-        - --netcup-customer-id=YOUR_ID
         env:
-        - name: NETCUP_API_KEY
+        - name: DOMAIN_FILTER
+          value: https://ccp.netcup.net/run/webservice/servers/endpoint.php
+        - name: API_KEY
           valueFrom:
             secretKeyRef:
-              key: NETCUP_API_KEY
-              name: netcup-api-key
-        - name: NETCUP_API_PASSWORD
+              name: porkbun-secret
+              key: API_KEY
+        - name: API_SECRET
           valueFrom:
             secretKeyRef:
-              key: NETCUP_API_PASSWORD
-              name: netcup-api-password
+              name: porkbun-secret
+              key: API_SECRET
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
 
 ```
 
@@ -120,10 +131,9 @@ spec:
 Create the deployment and service:
 
 ```
-$ kubectl create -f example/nginx.yaml
+kubectl create -f example/nginx.yaml
 ```
 
-[embedmd]:# (example/nginx.yaml)
 ```yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -186,6 +196,6 @@ The records should show the external IP address of the service as the A record f
 Now that we have verified that external-dns will automatically manage Netcup DNS records, we can delete the tutorial's example:
 
 ```
-$ kubectl delete -f example/nginx.yaml
-$ kubectl delete -f example/external-dns.yaml
+kubectl delete -f example/nginx.yaml
+kubectl delete -f example/external-dns.yaml
 ```
