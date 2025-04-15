@@ -252,6 +252,10 @@ func convertToPorkbunRecord(recs *[]pb.Record, endpoints []*endpoint.Endpoint, z
 	records := make([]pb.Record, len(endpoints))
 
 	for i, ep := range endpoints {
+		recordName := strings.TrimSuffix(ep.DNSName, "."+zoneName)
+		if recordName == zoneName {
+			recordName = ""
+		}
 		target := ep.Targets[0]
 		if ep.RecordType == endpoint.RecordTypeTXT && strings.HasPrefix(target, "\"heritage=") {
 			target = strings.Trim(ep.Targets[0], "\"")
@@ -259,7 +263,7 @@ func convertToPorkbunRecord(recs *[]pb.Record, endpoints []*endpoint.Endpoint, z
 
 		records[i] = pb.Record{
 			Type:    ep.RecordType,
-			Name:    ep.DNSName,
+			Name:    recordName,
 			Content: target,
 			ID:      getIDforRecord(ep.DNSName, target, ep.RecordType, recs),
 		}
