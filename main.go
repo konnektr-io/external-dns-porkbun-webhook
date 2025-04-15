@@ -145,13 +145,13 @@ func buildWebhookServer(logger *slog.Logger) (*http.ServeMux, error) {
 	var recordsPath = "/records"
 	var adjustEndpointsPath = "/adjustendpoints"
 
-	ncProvider, err := porkbun.NewPorkbunProvider(domainFilter, *apiKey, *apiSecret, *dryRun, logger)
+	pbProvider, err := porkbun.NewPorkbunProvider(domainFilter, *apiKey, *apiSecret, *dryRun, logger)
 	if err != nil {
 		return nil, err
 	}
 
 	p := webhook.WebhookServer{
-		Provider: ncProvider,
+		Provider: pbProvider,
 	}
 
 	// Add healthzPath

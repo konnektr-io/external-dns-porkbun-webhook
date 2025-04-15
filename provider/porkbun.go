@@ -73,7 +73,7 @@ func (p *PorkbunProvider) DeleteDnsRecords(ctx context.Context, zone string, rec
 	for _, record := range *records {
 		id, err := strconv.Atoi(record.ID)
 		if err != nil {
-			return "", fmt.Errorf("unable to parse record ID '%s': %v", record.ID, err)
+			return "", fmt.Errorf("unable to parse record ID '%s': %v. Full record: %+v", record.ID, err, record)
 		}
 		err = p.client.DeleteRecord(ctx, zone, id)
 		if err != nil {
@@ -87,7 +87,7 @@ func (p *PorkbunProvider) UpdateDnsRecords(ctx context.Context, zone string, rec
 	for _, record := range *records {
 		id, err := strconv.Atoi(record.ID)
 		if err != nil {
-			return "", fmt.Errorf("unable to parse record ID '%s': %v", record.ID, err)
+			return "", fmt.Errorf("unable to parse record ID '%s': %v. Full record: %+v", record.ID, err, record)
 		}
 		err = p.client.EditRecord(ctx, zone, id, record)
 		if err != nil {

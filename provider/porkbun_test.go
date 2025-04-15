@@ -244,7 +244,6 @@ func testApplyChanges(t *testing.T) {
 
 	err = p.ApplyChanges(context.TODO(), changes2)
 	assert.NoError(t, err)
-
 }
 
 func testRecords(t *testing.T) {
