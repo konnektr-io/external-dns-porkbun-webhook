@@ -221,6 +221,8 @@ func (p *PorkbunProvider) ApplyChanges(ctx context.Context, changes *plan.Change
 			Delete:    convertToPorkbunRecord(&recs, c.Delete, zoneName, true),
 		}
 
+		p.logger.Debug("applying changes", "zone", zoneName, "changes", change)
+
 		// If not in dry run, apply changes
 		_, err = p.UpdateDnsRecords(ctx, zoneName, change.UpdateOld)
 		if err != nil {
