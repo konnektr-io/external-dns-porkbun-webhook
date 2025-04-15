@@ -252,11 +252,6 @@ func convertToPorkbunRecord(recs *[]pb.Record, endpoints []*endpoint.Endpoint, z
 	records := make([]pb.Record, len(endpoints))
 
 	for i, ep := range endpoints {
-		recordName := strings.TrimSuffix(ep.DNSName, "."+zoneName)
-		fmt.Printf("Debug: ep.DNSName=%s, zoneName=%s, recordName=%s\n", ep.DNSName, zoneName, recordName)
-		if recordName == zoneName {
-			recordName = "@"
-		}
 		target := ep.Targets[0]
 		if ep.RecordType == endpoint.RecordTypeTXT && strings.HasPrefix(target, "\"heritage=") {
 			target = strings.Trim(ep.Targets[0], "\"")
@@ -264,9 +259,9 @@ func convertToPorkbunRecord(recs *[]pb.Record, endpoints []*endpoint.Endpoint, z
 
 		records[i] = pb.Record{
 			Type:    ep.RecordType,
-			Name:    recordName,
+			Name:    ep.DNSName,
 			Content: target,
-			ID:      getIDforRecord(recordName, target, ep.RecordType, recs),
+			ID:      getIDforRecord(ep.DNSName, target, ep.RecordType, recs),
 		}
 	}
 	return &records
@@ -278,11 +273,6 @@ func getIDforRecord(recordName string, target string, recordType string, recs *[
 	for _, rec := range *recs {
 		if recordType == rec.Type && target == rec.Content && rec.Name == recordName {
 			return rec.ID
-		}
-		if recordType == rec.Type && target == rec.Content && rec.Name != recordName {
-			// Log mismatches
-			fmt.Printf("Mismatch: recordType=%s rec.Type=%s, target=%s rec.Content=%s, recordName=%s rec.Name=%s\n",
-				recordType, rec.Type, target, rec.Content, recordName, rec.Name)
 		}
 	}
 

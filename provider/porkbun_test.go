@@ -130,7 +130,7 @@ func testConvertToPorkbunRecord(t *testing.T) {
 	epList := []*endpoint.Endpoint{&ep1, &ep2, &ep3, &ep4}
 
 	pb1 := pb.Record{
-		Name:    "foo",
+		Name:    "foo.bar.org",
 		Type:    "A",
 		Content: "5.5.5.5",
 		ID:      "10",
@@ -144,7 +144,7 @@ func testConvertToPorkbunRecord(t *testing.T) {
 
 	pb3 := pb.Record{
 		ID:      "",
-		Name:    "@",
+		Name:    "bar.org",
 		Type:    "A",
 		Content: "5.5.5.5",
 	}
