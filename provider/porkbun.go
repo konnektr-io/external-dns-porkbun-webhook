@@ -214,6 +214,9 @@ func (p *PorkbunProvider) ApplyChanges(ctx context.Context, changes *plan.Change
 		if err != nil {
 			p.logger.Error("unable to get DNS records for domain", "zone", zoneName, "error", err.Error())
 		}
+
+		p.logger.Debug("got DNS records for domain", "domain", zoneName, "records", recs)
+
 		change := &PorkbunChange{
 			Create:    convertToPorkbunRecord(&recs, c.Create, zoneName, false),
 			UpdateNew: convertToPorkbunRecord(&recs, c.UpdateNew, zoneName, false),
@@ -221,7 +224,7 @@ func (p *PorkbunProvider) ApplyChanges(ctx context.Context, changes *plan.Change
 			Delete:    convertToPorkbunRecord(&recs, c.Delete, zoneName, true),
 		}
 
-		p.logger.Debug("applying changes", "zone", zoneName, "changes", change)
+		p.logger.Debug("applying changes", "zone", zoneName, "porkbun change", change)
 
 		// If not in dry run, apply changes
 		_, err = p.UpdateDnsRecords(ctx, zoneName, change.UpdateOld)

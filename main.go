@@ -33,11 +33,17 @@ var (
 )
 
 func main() {
-
 	promslogConfig := &promslog.Config{}
 	flag.AddFlags(kingpin.CommandLine, promslogConfig)
 	kingpin.Version(version.Info())
 	kingpin.Parse()
+
+	// Ensure the logger respects the GO_LOG environment variable
+	if os.Getenv("GO_LOG") != "" {
+		level := new(promslog.Level)
+		level.Set(os.Getenv("GO_LOG"))
+		promslogConfig.Level = level
+	}
 
 	var logger = promslog.New(promslogConfig)
 	logger.Info("starting external-dns Porkbun webhook plugin", "version", version.Version, "revision", version.Revision)

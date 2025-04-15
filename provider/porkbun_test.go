@@ -72,30 +72,30 @@ func testGetIDforRecord(t *testing.T) {
 	target2 := "5.5.5.5"
 	recordType := "TXT"
 
-	nc1 := pb.Record{
+	pb1 := pb.Record{
 		Name:    "foo.example.com",
 		Type:    "TXT",
 		Content: "heritage=external-dns,external-dns/owner=default,external-dns/resource=service/default/nginx",
 		ID:      "10",
 	}
-	nc2 := pb.Record{
+	pb2 := pb.Record{
 		Name:    "foo.foo.org",
 		Type:    "A",
 		Content: "5.5.5.5",
 		ID:      "10",
 	}
 
-	nc3 := pb.Record{
+	pb3 := pb.Record{
 		ID:      "",
 		Name:    "baz.org",
 		Type:    "A",
 		Content: "5.5.5.5",
 	}
 
-	ncRecordList := []pb.Record{nc1, nc2, nc3}
+	pbRecordList := []pb.Record{pb1, pb2, pb3}
 
-	assert.Equal(t, "10", getIDforRecord(recordName, target1, recordType, &ncRecordList))
-	assert.Equal(t, "", getIDforRecord(recordName, target2, recordType, &ncRecordList))
+	assert.Equal(t, "10", getIDforRecord(recordName, target1, recordType, &pbRecordList))
+	assert.Equal(t, "", getIDforRecord(recordName, target2, recordType, &pbRecordList))
 
 }
 
@@ -129,37 +129,37 @@ func testConvertToPorkbunRecord(t *testing.T) {
 
 	epList := []*endpoint.Endpoint{&ep1, &ep2, &ep3, &ep4}
 
-	nc1 := pb.Record{
+	pb1 := pb.Record{
 		Name:    "foo",
 		Type:    "A",
 		Content: "5.5.5.5",
 		ID:      "10",
 	}
-	nc2 := pb.Record{
+	pb2 := pb.Record{
 		Name:    "foo.foo.org",
 		Type:    "A",
 		Content: "5.5.5.5",
 		ID:      "15",
 	}
 
-	nc3 := pb.Record{
+	pb3 := pb.Record{
 		ID:      "",
 		Name:    "@",
 		Type:    "A",
 		Content: "5.5.5.5",
 	}
 
-	nc4 := pb.Record{
+	pb4 := pb.Record{
 		ID:      "",
 		Name:    "foo.baz.org",
 		Type:    "TXT",
 		Content: "heritage=external-dns,external-dns/owner=default,external-dns/resource=service/default/nginx",
 	}
 
-	ncRecordList := []pb.Record{nc1, nc2, nc3, nc4}
+	pbRecordList := []pb.Record{pb1, pb2, pb3, pb4}
 
 	// No deletion
-	assert.Equal(t, convertToPorkbunRecord(&ncRecordList, epList, "bar.org", false), &ncRecordList)
+	assert.Equal(t, convertToPorkbunRecord(&pbRecordList, epList, "bar.org", false), &pbRecordList)
 }
 
 func testNewPorkbunProvider(t *testing.T) {
