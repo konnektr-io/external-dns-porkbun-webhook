@@ -41,7 +41,7 @@ func main() {
 
 	level := new(promslog.Level)
 	if err := level.Set(*logLevel); err != nil {
-		fmt.Fprintf(os.Stderr, "Invalid log level in GO_LOG: %s\n", logLevel)
+		fmt.Fprintf(os.Stderr, "Invalid log level in GO_LOG: %s\n", *logLevel)
 		os.Exit(1)
 	}
 	promslogConfig.Level = level
