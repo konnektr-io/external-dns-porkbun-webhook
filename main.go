@@ -22,6 +22,7 @@ import (
 )
 
 var (
+	logLevel          = kingpin.Flag("log-level", "Set the level of logging. (default: info, options: panic, debug, info, warning, error, fatal)").Default("info").Envar("GO_LOG").String()
 	listenAddr        = kingpin.Flag("listen-address", "The address this plugin listens on").Default(":8888").Envar("LISTEN_ADDRESS").String()
 	metricsListenAddr = kingpin.Flag("metrics-listen-address", "The address this plugin provides metrics on").Default(":8889").Envar("METRICS_LISTEN_ADDRESS").String()
 	tlsConfig         = kingpin.Flag("tls-config", "Path to TLS config file.").Envar("TLS_CONFIG").Default("").String()
@@ -38,14 +39,12 @@ func main() {
 	kingpin.Version(version.Info())
 	kingpin.Parse()
 
-	if logLevel := os.Getenv("GO_LOG"); logLevel != "" {
-		level := new(promslog.Level)
-		if err := level.Set(logLevel); err != nil {
-			fmt.Fprintf(os.Stderr, "Invalid log level in GO_LOG: %s\n", logLevel)
-			os.Exit(1)
-		}
-		promslogConfig.Level = level
+	level := new(promslog.Level)
+	if err := level.Set(*logLevel); err != nil {
+		fmt.Fprintf(os.Stderr, "Invalid log level in GO_LOG: %s\n", logLevel)
+		os.Exit(1)
 	}
+	promslogConfig.Level = level
 
 	var logger = promslog.New(promslogConfig)
 	logger.Info("starting external-dns Porkbun webhook plugin", "version", version.Version, "revision", version.Revision)
