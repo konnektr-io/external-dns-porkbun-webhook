@@ -215,18 +215,12 @@ func (p *PorkbunProvider) ApplyChanges(ctx context.Context, changes *plan.Change
 			p.logger.Error("unable to get DNS records for domain", "zone", zoneName, "error", err.Error())
 		}
 
-		p.logger.Debug("got DNS records for domain", "domain", zoneName, "planned change", c, "records", recs)
-
 		change := &PorkbunChange{
 			Create:    convertToPorkbunRecord(&recs, c.Create, zoneName, false),
 			UpdateNew: convertToPorkbunRecord(&recs, c.UpdateNew, zoneName, false),
 			UpdateOld: convertToPorkbunRecord(&recs, c.UpdateOld, zoneName, true),
 			Delete:    convertToPorkbunRecord(&recs, c.Delete, zoneName, true),
 		}
-
-		p.logger.Debug("applying changes", "zone", zoneName, "porkbun change",
-			fmt.Sprintf("Create: %+v, UpdateNew: %+v, UpdateOld: %+v, Delete: %+v",
-				*change.Create, *change.UpdateNew, *change.UpdateOld, *change.Delete))
 
 		// If not in dry run, apply changes
 		_, err = p.UpdateDnsRecords(ctx, zoneName, change.UpdateOld)
@@ -259,6 +253,7 @@ func convertToPorkbunRecord(recs *[]pb.Record, endpoints []*endpoint.Endpoint, z
 
 	for i, ep := range endpoints {
 		recordName := strings.TrimSuffix(ep.DNSName, "."+zoneName)
+		fmt.Printf("Debug: ep.DNSName=%s, zoneName=%s, recordName=%s\n", ep.DNSName, zoneName, recordName)
 		if recordName == zoneName {
 			recordName = "@"
 		}
@@ -284,9 +279,11 @@ func getIDforRecord(recordName string, target string, recordType string, recs *[
 		if recordType == rec.Type && target == rec.Content && rec.Name == recordName {
 			return rec.ID
 		}
-		// Log mismatches
-		fmt.Printf("Mismatch: recordType=%s rec.Type=%s, target=%s rec.Content=%s, recordName=%s rec.Name=%s\n",
-			recordType, rec.Type, target, rec.Content, recordName, rec.Name)
+		if recordType == rec.Type && target == rec.Content && rec.Name != recordName {
+			// Log mismatches
+			fmt.Printf("Mismatch: recordType=%s rec.Type=%s, target=%s rec.Content=%s, recordName=%s rec.Name=%s\n",
+				recordType, rec.Type, target, rec.Content, recordName, rec.Name)
+		}
 	}
 
 	return ""
