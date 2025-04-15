@@ -129,8 +129,14 @@ func testConvertToPorkbunRecord(t *testing.T) {
 
 	epList := []*endpoint.Endpoint{&ep1, &ep2, &ep3, &ep4}
 
-	pb1 := pb.Record{
+	pb1Retrieved := pb.Record{
 		Name:    "foo.bar.org",
+		Type:    "A",
+		Content: "5.5.5.5",
+		ID:      "10",
+	}
+	pb1 := pb.Record{
+		Name:    "foo",
 		Type:    "A",
 		Content: "5.5.5.5",
 		ID:      "10",
@@ -141,14 +147,18 @@ func testConvertToPorkbunRecord(t *testing.T) {
 		Content: "5.5.5.5",
 		ID:      "15",
 	}
-
-	pb3 := pb.Record{
-		ID:      "",
+	pb3retrieved := pb.Record{
+		ID:      "1",
 		Name:    "bar.org",
 		Type:    "A",
 		Content: "5.5.5.5",
 	}
-
+	pb3 := pb.Record{
+		ID:      "1",
+		Name:    "",
+		Type:    "A",
+		Content: "5.5.5.5",
+	}
 	pb4 := pb.Record{
 		ID:      "",
 		Name:    "foo.baz.org",
@@ -156,10 +166,12 @@ func testConvertToPorkbunRecord(t *testing.T) {
 		Content: "heritage=external-dns,external-dns/owner=default,external-dns/resource=service/default/nginx",
 	}
 
+	// The retrieved records include the zone
+	pbRetrievedRecordList := []pb.Record{pb1Retrieved, pb2, pb3retrieved, pb4}
+	// The records we want to create should not include the zone
 	pbRecordList := []pb.Record{pb1, pb2, pb3, pb4}
 
-	// No deletion
-	assert.Equal(t, convertToPorkbunRecord(&pbRecordList, epList, "bar.org", false), &pbRecordList)
+	assert.Equal(t, convertToPorkbunRecord(&pbRetrievedRecordList, epList, "bar.org", false), &pbRecordList)
 }
 
 func testNewPorkbunProvider(t *testing.T) {
