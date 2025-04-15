@@ -284,6 +284,9 @@ func getIDforRecord(recordName string, target string, recordType string, recs *[
 		if recordType == rec.Type && target == rec.Content && rec.Name == recordName {
 			return rec.ID
 		}
+		// Log mismatches
+		fmt.Printf("Mismatch: recordType=%s rec.Type=%s, target=%s rec.Content=%s, recordName=%s rec.Name=%s\n",
+			recordType, rec.Type, target, rec.Content, recordName, rec.Name)
 	}
 
 	return ""
