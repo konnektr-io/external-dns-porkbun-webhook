@@ -41,7 +41,7 @@ func main() {
 	// Ensure the logger respects the GO_LOG environment variable
 	if os.Getenv("GO_LOG") != "" {
 		level := new(promslog.Level)
-		level.Set(os.Getenv("GO_LOG"))
+		_ = level.Set(os.Getenv("GO_LOG"))
 		promslogConfig.Level = level
 	}
 
