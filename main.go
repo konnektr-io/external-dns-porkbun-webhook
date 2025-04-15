@@ -38,10 +38,12 @@ func main() {
 	kingpin.Version(version.Info())
 	kingpin.Parse()
 
-	// Ensure the logger respects the GO_LOG environment variable
-	if os.Getenv("GO_LOG") != "" {
+	if logLevel := os.Getenv("GO_LOG"); logLevel != "" {
 		level := new(promslog.Level)
-		_ = level.Set(os.Getenv("GO_LOG"))
+		if err := level.Set(logLevel); err != nil {
+			fmt.Fprintf(os.Stderr, "Invalid log level in GO_LOG: %s\n", logLevel)
+			os.Exit(1)
+		}
 		promslogConfig.Level = level
 	}
 
