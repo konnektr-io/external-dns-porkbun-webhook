@@ -39,7 +39,7 @@ func main() {
 	kingpin.Version(version.Info())
 	kingpin.Parse()
 
-	level := new(promslog.Level)
+	level := promslog.NewLevel() // Default to "info" level
 	if err := level.Set(*logLevel); err != nil {
 		fmt.Fprintf(os.Stderr, "Invalid log level in GO_LOG: %s\n", *logLevel)
 		os.Exit(1)
