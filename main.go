@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/alecthomas/kingpin/v2"
-	porkbun "github.com/nikoraes/external-dns-porkbun-webhook/provider"
+	porkbun "github.com/konnektr-io/external-dns-porkbun-webhook/provider"
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
 	cversion "github.com/prometheus/client_golang/prometheus/collectors/version"

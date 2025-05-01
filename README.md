@@ -88,7 +88,7 @@ spec:
         - --source=service
         - --provider=webhook
       - name: external-dns-webhook-provider
-        image: ghcr.io/nikoraes/external-dns-porkbun-webhook:main
+        image: ghcr.io/konnektr-io/external-dns-porkbun-webhook:main
         imagePullPolicy: IfNotPresent
         env:
         - name: GO_LOG

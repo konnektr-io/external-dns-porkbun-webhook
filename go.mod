@@ -1,4 +1,4 @@
-module github.com/nikoraes/external-dns-porkbun-webhook
+module github.com/konnektr-io/external-dns-porkbun-webhook
 
 go 1.24.0
 
