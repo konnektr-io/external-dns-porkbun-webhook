@@ -15,7 +15,7 @@ Make sure to use external-dns version 0.14.0 or later for this tutorial.
 
 A secret containing the a Porkbun API key and an API Secret Key is needed for this provider. You can get a token for your user [here](https://porkbun.com/account/api).
 
-To create the secret you can run `kubectl create secret generic porkbun-secret --from-literal=API_KEY=<replace-with-your-access-token> --from-literal=API_SECRET=<replace-with-your-access-token>`.
+To create the secret you can run `kubectl create secret generic porkbun-secret --from-literal=API_KEY=<replace-with-your-api-key> --from-literal=API_SECRET=<replace-with-your-api-secret>`.
 
 ### Deploy external-dns
 
@@ -175,7 +175,7 @@ The records should show the external IP address of the service as the A record f
 
 ### Cleanup
 
-Now that we have verified that external-dns will automatically manage Netcup DNS records, we can delete the tutorial's example:
+Now that we have verified that external-dns will automatically manage Porkbun DNS records, we can delete the tutorial's example:
 
 ```bash
 kubectl delete -f example/nginx.yaml
