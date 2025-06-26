@@ -65,6 +65,8 @@ spec:
       - name: external-dns-webhook-provider
         image: ghcr.io/konnektr-io/external-dns-porkbun-webhook:main
         imagePullPolicy: IfNotPresent
+        args:
+        - --domain-filter=YOUR_DOMAIN
         resources:
           requests:
             memory: "64Mi"
