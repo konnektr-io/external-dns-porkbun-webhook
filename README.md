@@ -90,11 +90,11 @@ spec:
       - name: external-dns-webhook-provider
         image: ghcr.io/konnektr-io/external-dns-porkbun-webhook:main
         imagePullPolicy: IfNotPresent
+        args:
+        - --domain-filter=YOUR_DOMAIN
         env:
         - name: GO_LOG
           value: "debug"
-        - name: DOMAIN_FILTER
-          value: YOUR_DOMAIN
         - name: API_KEY
           valueFrom:
             secretKeyRef:
