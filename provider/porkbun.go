@@ -53,7 +53,7 @@ func NewPorkbunProvider(domainFilterList *[]string, apiKey string, apiSecret str
 
 	return &PorkbunProvider{
 		client:       client,
-		domainFilter: domainFilter,
+		domainFilter: *domainFilter,
 		dryRun:       dryRun,
 		logger:       logger,
 	}, nil
