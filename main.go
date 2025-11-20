@@ -152,7 +152,7 @@ func buildWebhookServer(logger *slog.Logger) (*http.ServeMux, error) {
 	var recordsPath = "/records"
 	var adjustEndpointsPath = "/adjustendpoints"
 
-	pbProvider, err := porkbun.NewPorkbunProvider(domainFilter, *apiKey, *apiSecret, *dryRun, logger)
+	pbProvider, err := porkbun.NewPorkbunProvider(*domainFilter, *apiKey, *apiSecret, *dryRun, logger)
 	if err != nil {
 		return nil, err
 	}
