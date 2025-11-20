@@ -157,7 +157,7 @@ Note the annotation on the service; use the same hostname as the Porkbun DNS zon
 of the DNS zone (e.g. 'www.example.com').
 
 By setting the TTL annotation on the service, you have to pass a valid TTL, which must be 120 or above.
-This annotation is optional, if you won't set it, it will be 1 (automatic) which is 300.
+This annotation is optional, if you won't set it, it will be 1 (automatic) which is 600.
 
 external-dns uses this annotation to determine what services should be registered with DNS.  Removing the annotation
 will cause external-dns to remove the corresponding DNS records.
