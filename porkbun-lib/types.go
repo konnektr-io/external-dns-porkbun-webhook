@@ -1,0 +1,97 @@
+package porkbun
+
+import (
+	"encoding/json"
+	"fmt"
+)
+
+type apiRequest interface{}
+
+type authRequest struct {
+	APIKey       string `json:"apikey"`
+	SecretAPIKey string `json:"secretapikey"`
+	apiRequest
+}
+
+func (f authRequest) MarshalJSON() ([]byte, error) {
+	type clone authRequest
+	c := clone(f)
+
+	root, err := json.Marshal(c)
+	if err != nil {
+		return nil, err
+	}
+
+	if c.apiRequest == nil {
+		return root, nil
+	}
+
+	embedded, err := json.Marshal(c.apiRequest)
+	if err != nil {
+		return nil, err
+	}
+
+	return []byte(string(root[:len(root)-1]) + ",   " + string(embedded[1:])), nil
+}
+
+// Status the API response status.
+type Status struct {
+	Status  string `json:"status"`
+	Message string `json:"message,omitempty"`
+}
+
+func (a Status) Error() string {
+	return fmt.Sprintf("%s: %s", a.Status, a.Message)
+}
+
+// ServerError the API server error.
+type ServerError struct {
+	StatusCode int    `json:"statusCode"`
+	Message    string `json:"message,omitempty"`
+}
+
+func (a ServerError) Error() string {
+	return fmt.Sprintf("status: %d message: %s", a.StatusCode, a.Message)
+}
+
+// Record a DNS record.
+type Record struct {
+	ID      string `json:"id,omitempty"`
+	Name    string `json:"name,omitempty"`
+	Type    string `json:"type,omitempty"`
+	Content string `json:"content,omitempty"`
+	TTL     string `json:"ttl,omitempty"`
+	Prio    string `json:"prio,omitempty"`
+	Notes   string `json:"notes,omitempty"`
+}
+
+type pingResponse struct {
+	Status
+	YourIP string `json:"yourIp"`
+}
+
+// createResponse is the response from the Porkbun API for CreateRecord.
+// ID field uses json.RawMessage because the API may return id as int, string, or object
+// depending on the endpoint version. The webhook ignores the ID anyway.
+type createResponse struct {
+	Status
+	ID json.RawMessage `json:"id"`
+}
+
+type retrieveResponse struct {
+	Status
+	Records []Record `json:"records"`
+}
+
+// SSLBundle a  SSL certificate bundle.
+type SSLBundle struct {
+	IntermediateCertificate string `json:"intermediatecertificate"`
+	CertificateChain        string `json:"certificatechain"`
+	PrivateKey              string `json:"privatekey"`
+	PublicKey               string `json:"publickey"`
+}
+
+type sslBundleResponse struct {
+	Status
+	SSLBundle
+}
