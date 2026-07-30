@@ -1,6 +1,6 @@
 module github.com/konnektr-io/external-dns-porkbun-webhook
 
-go 1.24.2
+go 1.26.5
 
 require (
 	github.com/alecthomas/kingpin/v2 v2.4.0

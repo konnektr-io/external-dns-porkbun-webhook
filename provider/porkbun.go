@@ -111,16 +111,18 @@ func (p *PorkbunProvider) Records(ctx context.Context) ([]*endpoint.Endpoint, er
 
 		for _, domain := range p.domainFilter.Filters {
 
-			records, err := p.client.RetrieveRecords(ctx, domain)
+			recs, err := p.client.RetrieveRecords(ctx, domain)
 			if err != nil {
 				return nil, fmt.Errorf("unable to query DNS zone records for domain '%v': %v", domain, err)
 			}
 			p.logger.Info("got DNS records for domain", "domain", domain)
-			for _, rec := range records {
+			for _, rec := range recs {
 				name := rec.Name
 				nameStart := strings.Split(rec.Name, ".")[0]
-				if nameStart == "@" {
+				if name == "" || nameStart == "@" {
 					name = domain
+				} else {
+					name = name + "." + domain
 				}
 				ttl, err := strconv.Atoi(rec.TTL)
 				if err != nil {
@@ -265,7 +267,7 @@ func convertToPorkbunRecord(recs *[]pb.Record, endpoints []*endpoint.Endpoint, z
 			Type:    ep.RecordType,
 			Name:    recordName,
 			Content: target,
-			ID:      getIDforRecord(ep.DNSName, target, ep.RecordType, recs),
+			ID:      getIDforRecord(ep.DNSName, target, ep.RecordType, zoneName, recs),
 		}
 	}
 	return &records
@@ -273,9 +275,20 @@ func convertToPorkbunRecord(recs *[]pb.Record, endpoints []*endpoint.Endpoint, z
 
 // getIDforRecord compares the endpoint with existing records to get the ID from Porkbun to ensure it can be safely removed.
 // returns empty string if no match found
-func getIDforRecord(recordName string, target string, recordType string, recs *[]pb.Record) string {
+func getIDforRecord(recordName string, target string, recordType string, zoneName string, recs *[]pb.Record) string {
+	// Porkbun returns relative names (e.g. "mqtt.local.raes"), so strip the zone
+	// from the full DNS name (e.g. "mqtt.local.raes.konnektr.io") before comparing
+	trimmedName := strings.TrimSuffix(recordName, "."+zoneName)
+	if trimmedName == recordName {
+		// No ".zoneName" suffix was trimmed.
+		// If the full DNS name is the zone itself, it's the root record.
+		// Otherwise it belongs to a different zone and won't match.
+		if recordName == zoneName {
+			trimmedName = ""
+		}
+	}
 	for _, rec := range *recs {
-		if recordType == rec.Type && target == rec.Content && rec.Name == recordName {
+		if recordType == rec.Type && target == rec.Content && rec.Name == trimmedName {
 			return rec.ID
 		}
 	}

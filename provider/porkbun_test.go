@@ -67,13 +67,17 @@ func testEndpointZoneName(t *testing.T) {
 
 func testGetIDforRecord(t *testing.T) {
 
+	zoneName := "example.com"
+
 	recordName := "foo.example.com"
 	target1 := "heritage=external-dns,external-dns/owner=default,external-dns/resource=service/default/nginx"
 	target2 := "5.5.5.5"
 	recordType := "TXT"
 
+	// Porkbun API returns relative names (subdomain only, without the zone)
+	// e.g. for "foo.example.com" it returns Name: "foo"
 	pb1 := pb.Record{
-		Name:    "foo.example.com",
+		Name:    "foo", // relative name
 		Type:    "TXT",
 		Content: "heritage=external-dns,external-dns/owner=default,external-dns/resource=service/default/nginx",
 		ID:      "10",
@@ -94,9 +98,22 @@ func testGetIDforRecord(t *testing.T) {
 
 	pbRecordList := []pb.Record{pb1, pb2, pb3}
 
-	assert.Equal(t, "10", getIDforRecord(recordName, target1, recordType, &pbRecordList))
-	assert.Equal(t, "", getIDforRecord(recordName, target2, recordType, &pbRecordList))
+	assert.Equal(t, "10", getIDforRecord(recordName, target1, recordType, zoneName, &pbRecordList))
+	assert.Equal(t, "", getIDforRecord(recordName, target2, recordType, zoneName, &pbRecordList))
+	assert.Equal(t, "", getIDforRecord("nonexistent.example.com", "1.2.3.4", "A", zoneName, &pbRecordList))
 
+	// Root record: zone equals recordName → trimmedName should be ""
+	rootRecord := pb.Record{
+		Name:    "",
+		Type:    "A",
+		Content: "1.2.3.4",
+		ID:      "42",
+	}
+	rootList := []pb.Record{rootRecord}
+	assert.Equal(t, "42", getIDforRecord("example.com", "1.2.3.4", "A", zoneName, &rootList))
+
+	// Cross-zone record: record from different zone should not match
+	assert.Equal(t, "", getIDforRecord("other.zone.org", "5.5.5.5", "A", zoneName, &pbRecordList))
 }
 
 func testConvertToPorkbunRecord(t *testing.T) {
@@ -122,15 +139,17 @@ func testConvertToPorkbunRecord(t *testing.T) {
 	}
 
 	ep4 := endpoint.Endpoint{
-		DNSName:    "foo.baz.org",
+		DNSName:    "baz.org",
 		Targets:    endpoint.Targets{"\"heritage=external-dns,external-dns/owner=default,external-dns/resource=service/default/nginx\""},
 		RecordType: endpoint.RecordTypeTXT,
 	}
 
 	epList := []*endpoint.Endpoint{&ep1, &ep2, &ep3, &ep4}
 
+	// Porkbun API returns relative names (subdomain only, without domain)
+	// e.g. for "foo.bar.org" it returns Name: "foo"
 	pb1Retrieved := pb.Record{
-		Name:    "foo.bar.org",
+		Name:    "foo",      // relative name — matches ep1.DNSName stripped of "bar.org"
 		Type:    "A",
 		Content: "5.5.5.5",
 		ID:      "10",
@@ -149,7 +168,7 @@ func testConvertToPorkbunRecord(t *testing.T) {
 	}
 	pb3retrieved := pb.Record{
 		ID:      "1",
-		Name:    "bar.org",
+		Name:    "",          // root record — empty string
 		Type:    "A",
 		Content: "5.5.5.5",
 	}
@@ -161,17 +180,19 @@ func testConvertToPorkbunRecord(t *testing.T) {
 	}
 	pb4 := pb.Record{
 		ID:      "",
-		Name:    "foo.baz.org",
+		Name:    "baz.org",
 		Type:    "TXT",
 		Content: "heritage=external-dns,external-dns/owner=default,external-dns/resource=service/default/nginx",
 	}
 
-	// The retrieved records include the zone
-	pbRetrievedRecordList := []pb.Record{pb1Retrieved, pb2, pb3retrieved, pb4}
-	// The records we want to create should not include the zone
+	// The retrieved records use relative names (as Porkbun API returns)
+	pbRetrievedRecordList := []pb.Record{pb1Retrieved, pb2, pb3retrieved}
+	
+	// ep4 (baz.org) is NOT in the retrieved list (different zone), so ID should be ""
 	pbRecordList := []pb.Record{pb1, pb2, pb3, pb4}
 
-	assert.Equal(t, convertToPorkbunRecord(&pbRetrievedRecordList, epList, "bar.org", false), &pbRecordList)
+	result := convertToPorkbunRecord(&pbRetrievedRecordList, epList, "bar.org", false)
+	assert.Equal(t, &pbRecordList, result)
 }
 
 func testNewPorkbunProvider(t *testing.T) {
