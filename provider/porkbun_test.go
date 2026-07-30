@@ -74,10 +74,10 @@ func testGetIDforRecord(t *testing.T) {
 	target2 := "5.5.5.5"
 	recordType := "TXT"
 
-	// Porkbun API returns relative names (subdomain only, without the zone)
-	// e.g. for "foo.example.com" it returns Name: "foo"
+	// Porkbun API returns fully qualified names in the Name field.
+	// e.g. for "foo.example.com" it returns Name: "foo.example.com"
 	pb1 := pb.Record{
-		Name:    "foo", // relative name
+		Name:    "foo.example.com", // FQDN — matches recordName
 		Type:    "TXT",
 		Content: "heritage=external-dns,external-dns/owner=default,external-dns/resource=service/default/nginx",
 		ID:      "10",
@@ -102,9 +102,9 @@ func testGetIDforRecord(t *testing.T) {
 	assert.Equal(t, "", getIDforRecord(recordName, target2, recordType, zoneName, &pbRecordList))
 	assert.Equal(t, "", getIDforRecord("nonexistent.example.com", "1.2.3.4", "A", zoneName, &pbRecordList))
 
-	// Root record: zone equals recordName → trimmedName should be ""
+	// Root record: zone equals recordName — both should be "example.com"
 	rootRecord := pb.Record{
-		Name:    "",
+		Name:    "example.com", // FQDN for root record
 		Type:    "A",
 		Content: "1.2.3.4",
 		ID:      "42",
@@ -146,10 +146,10 @@ func testConvertToPorkbunRecord(t *testing.T) {
 
 	epList := []*endpoint.Endpoint{&ep1, &ep2, &ep3, &ep4}
 
-	// Porkbun API returns relative names (subdomain only, without domain)
-	// e.g. for "foo.bar.org" it returns Name: "foo"
+	// Porkbun API returns fully qualified names in the Name field.
+	// e.g. for "foo.bar.org" it returns Name: "foo.bar.org"
 	pb1Retrieved := pb.Record{
-		Name:    "foo",      // relative name — matches ep1.DNSName stripped of "bar.org"
+		Name:    "foo.bar.org", // FQDN — matches ep1.DNSName
 		Type:    "A",
 		Content: "5.5.5.5",
 		ID:      "10",
@@ -168,13 +168,13 @@ func testConvertToPorkbunRecord(t *testing.T) {
 	}
 	pb3retrieved := pb.Record{
 		ID:      "1",
-		Name:    "",          // root record — empty string
+		Name:    "bar.org", // FQDN for root record
 		Type:    "A",
 		Content: "5.5.5.5",
 	}
 	pb3 := pb.Record{
 		ID:      "1",
-		Name:    "",
+		Name:    "", // empty for API call (root record)
 		Type:    "A",
 		Content: "5.5.5.5",
 	}
@@ -185,9 +185,9 @@ func testConvertToPorkbunRecord(t *testing.T) {
 		Content: "heritage=external-dns,external-dns/owner=default,external-dns/resource=service/default/nginx",
 	}
 
-	// The retrieved records use relative names (as Porkbun API returns)
+	// The retrieved records use FQDN names (as Porkbun API returns)
 	pbRetrievedRecordList := []pb.Record{pb1Retrieved, pb2, pb3retrieved}
-	
+
 	// ep4 (baz.org) is NOT in the retrieved list (different zone), so ID should be ""
 	pbRecordList := []pb.Record{pb1, pb2, pb3, pb4}
 

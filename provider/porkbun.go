@@ -117,13 +117,9 @@ func (p *PorkbunProvider) Records(ctx context.Context) ([]*endpoint.Endpoint, er
 			}
 			p.logger.Info("got DNS records for domain", "domain", domain)
 			for _, rec := range recs {
+				// Porkbun API returns fully qualified names in the Name field
+				// e.g. "foo.example.com", "example.com" for root, "*.example.com" for wildcard
 				name := rec.Name
-				nameStart := strings.Split(rec.Name, ".")[0]
-				if name == "" || nameStart == "@" {
-					name = domain
-				} else {
-					name = name + "." + domain
-				}
 				ttl, err := strconv.Atoi(rec.TTL)
 				if err != nil {
 					return nil, fmt.Errorf("unable to parse TTL value: %v", err)
@@ -273,22 +269,13 @@ func convertToPorkbunRecord(recs *[]pb.Record, endpoints []*endpoint.Endpoint, z
 	return &records
 }
 
-// getIDforRecord compares the endpoint with existing records to get the ID from Porkbun to ensure it can be safely removed.
+// getIDforRecord compares the endpoint with existing records from Porkbun API.
+// Porkbun API returns fully qualified names (e.g. "foo.example.com"), so we
+// compare rec.Name directly with the endpoint's DNSName (also FQDN).
 // returns empty string if no match found
 func getIDforRecord(recordName string, target string, recordType string, zoneName string, recs *[]pb.Record) string {
-	// Porkbun returns relative names (e.g. "mqtt.local.raes"), so strip the zone
-	// from the full DNS name (e.g. "mqtt.local.raes.konnektr.io") before comparing
-	trimmedName := strings.TrimSuffix(recordName, "."+zoneName)
-	if trimmedName == recordName {
-		// No ".zoneName" suffix was trimmed.
-		// If the full DNS name is the zone itself, it's the root record.
-		// Otherwise it belongs to a different zone and won't match.
-		if recordName == zoneName {
-			trimmedName = ""
-		}
-	}
 	for _, rec := range *recs {
-		if recordType == rec.Type && target == rec.Content && rec.Name == trimmedName {
+		if recordType == rec.Type && target == rec.Content && rec.Name == recordName {
 			return rec.ID
 		}
 	}
