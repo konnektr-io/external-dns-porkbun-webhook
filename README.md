@@ -5,6 +5,9 @@ External-DNS Webhook Provider to manage Porkbun DNS Records
 > [!NOTE]
 > This repository is not affiliated with Porkbun.
 
+> [!NOTE]
+> This project started as a fork of [fcomuniz/external-dns-porkbun-webhook](https://github.com/fcomuniz/external-dns-porkbun-webhook) and has since diverged significantly. The original upstream appears unmaintained; changes here are developed independently.
+
 ## Setting up external-dns for Porkbun
 
 This tutorial describes how to setup external-dns for usage within a Kubernetes cluster using Porkbun as the domain provider.
