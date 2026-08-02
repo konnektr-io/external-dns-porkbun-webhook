@@ -1,0 +1,45 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+version: 2
+
+project_name: external-dns-porkbun-webhook
+
+builds:
+  - id: external-dns-porkbun-webhook
+    main: .
+    binary: external-dns-porkbun-webhook
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X github.com/prometheus/common/version.Version={{ .WithoutV }}
+      - -X github.com/prometheus/common/version.Revision={{ .FullCommit }}
+      - -X github.com/prometheus/common/version.Branch={{ .Branch }}
+      - -X github.com/prometheus/common/version.BuildUser=goreleaser
+      - -X github.com/prometheus/common/version.BuildDate={{ .Date }}
+
+archives:
+  - id: external-dns-porkbun-webhook
+    formats: [tar.gz]
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+
+checksum:
+  name_template: "checksums.txt"
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+# Preserve the release notes written when the GitHub release is created
+# (this job runs on `release: created`, after the release already exists).
+changelog:
+  use: github
