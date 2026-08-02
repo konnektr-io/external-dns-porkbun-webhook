@@ -156,8 +156,11 @@ spec:
 Note the annotation on the service; use the same hostname as the Porkbun DNS zone created above. The annotation may also be a subdomain
 of the DNS zone (e.g. 'www.example.com').
 
-By setting the TTL annotation on the service, you have to pass a valid TTL, which must be 120 or above.
-This annotation is optional, if you won't set it, it will be 1 (automatic) which is 600.
+By setting the TTL annotation on the service, you have to pass a valid TTL. Porkbun's minimum TTL is
+determined by your account settings (typically 600 seconds); explicit values below that minimum are
+rejected with an HTTP 400 error.
+This annotation is optional — if you don't set it, the provider omits the TTL and Porkbun applies its
+account default (equivalent to the automatic/1 setting).
 
 external-dns uses this annotation to determine what services should be registered with DNS.  Removing the annotation
 will cause external-dns to remove the corresponding DNS records.

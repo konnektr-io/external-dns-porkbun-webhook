@@ -33,6 +33,9 @@ func TestPorkbunProvider(t *testing.T) {
 	t.Run("GetIDforRecordStrict", testGetIDforRecordStrict)
 	t.Run("GetIDforRecordNonStrict", testGetIDforRecordNonStrict)
 	t.Run("ConvertToPorkbunRecord", testConvertToPorkbunRecord)
+	t.Run("ConvertToPorkbunRecordOldByKey", testConvertToPorkbunRecordOldByKey)
+	t.Run("ConvertToPorkbunRecordTTL", testConvertToPorkbunRecordTTL)
+	t.Run("ConvertToPorkbunRecordEmptyTargets", testConvertToPorkbunRecordEmptyTargets)
 	t.Run("NewPorkbunProvider", testNewPorkbunProvider)
 	t.Run("ApplyChanges", testApplyChanges)
 	t.Run("Records", testRecords)
@@ -253,7 +256,77 @@ func testConvertToPorkbunRecord(t *testing.T) {
 	pbRecordList := []pb.Record{pb1, pb2, pb3, pb4}
 
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-	assert.Equal(t, pbRecordList, convertToPorkbunRecord(logger, pbRetrievedRecordList, epList, "bar.org", false))
+	assert.Equal(t, pbRecordList, convertToPorkbunRecord(logger, pbRetrievedRecordList, epList, "bar.org", false, nil))
+}
+
+func testConvertToPorkbunRecordOldByKey(t *testing.T) {
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+
+	// current record holds the OLD content (before the desired update)
+	oldA := endpoint.Endpoint{
+		DNSName:    "foo.bar.org",
+		Targets:    endpoint.Targets{"9.9.9.9"},
+		RecordType: endpoint.RecordTypeA,
+	}
+	// desired update points at the new content
+	ep := endpoint.Endpoint{
+		DNSName:    "foo.bar.org",
+		Targets:    endpoint.Targets{"5.5.5.5"},
+		RecordType: endpoint.RecordTypeA,
+		RecordTTL:  600,
+	}
+
+	retrieved := []pb.Record{
+		{Name: "foo.bar.org", Type: "A", Content: "5.5.5.5", ID: "10"},
+		{Name: "foo.bar.org", Type: "A", Content: "9.9.9.9", ID: "99"},
+	}
+
+	// Without the old hint, a non-strict lookup matches by name+type only and
+	// returns the first record holding the *desired* content (id "10").
+	fallback := convertToPorkbunRecord(logger, retrieved, []*endpoint.Endpoint{&ep}, "bar.org", false, nil)
+	assert.Equal(t, []pb.Record{{Type: "A", Name: "foo", Content: "5.5.5.5", ID: "10", TTL: "600"}}, fallback)
+
+	// With the old hint we resolve against the old content (9.9.9.9 → id 99),
+	// which is the record external-dns actually wants to edit.
+	withOld := convertToPorkbunRecord(logger, retrieved, []*endpoint.Endpoint{&ep}, "bar.org", false,
+		map[endpointKey]*endpoint.Endpoint{{ep.DNSName, ep.RecordType}: &oldA})
+	assert.Equal(t, []pb.Record{{Type: "A", Name: "foo", Content: "5.5.5.5", ID: "99", TTL: "600"}}, withOld)
+}
+
+func testConvertToPorkbunRecordTTL(t *testing.T) {
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+
+	epWithTTL := endpoint.Endpoint{
+		DNSName:    "foo.bar.org",
+		Targets:    endpoint.Targets{"5.5.5.5"},
+		RecordType: endpoint.RecordTypeA,
+		RecordTTL:  600,
+	}
+	epWithoutTTL := endpoint.Endpoint{
+		DNSName:    "bar.org",
+		Targets:    endpoint.Targets{"1.2.3.4"},
+		RecordType: endpoint.RecordTypeA,
+	}
+
+	retrieved := []pb.Record{{Name: "foo.bar.org", Type: "A", Content: "5.5.5.5", ID: "10"}}
+
+	withTTL := convertToPorkbunRecord(logger, retrieved, []*endpoint.Endpoint{&epWithTTL}, "bar.org", false, nil)
+	assert.Equal(t, "600", withTTL[0].TTL)
+
+	withoutTTL := convertToPorkbunRecord(logger, retrieved, []*endpoint.Endpoint{&epWithoutTTL}, "bar.org", false, nil)
+	assert.Equal(t, "", withoutTTL[0].TTL, "TTL must be omitted when not set (Porkbun min 600, sub-min → HTTP 400)")
+}
+
+func testConvertToPorkbunRecordEmptyTargets(t *testing.T) {
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	ep := endpoint.Endpoint{
+		DNSName:    "foo.bar.org",
+		Targets:    endpoint.Targets{},
+		RecordType: endpoint.RecordTypeTXT,
+	}
+	retrieved := []pb.Record{}
+	result := convertToPorkbunRecord(logger, retrieved, []*endpoint.Endpoint{&ep}, "bar.org", false, nil)
+	assert.Empty(t, result, "endpoints without targets must be skipped, not panic")
 }
 
 func testNewPorkbunProvider(t *testing.T) {

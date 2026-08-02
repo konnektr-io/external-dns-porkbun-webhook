@@ -245,10 +245,21 @@ func applyChangesToZone(ctx context.Context, c *plan.Changes, p *PorkbunProvider
 		return fmt.Errorf("unable to get DNS records: %w", err)
 	}
 
+	// Index UpdateOld (state before the desired update) so update IDs can be
+	// resolved against the *old* content. This avoids hitting the wrong record
+	// when multiple records share a name (e.g. several TXT or A records).
+	oldByKey := make(map[endpointKey]*endpoint.Endpoint, len(c.UpdateOld))
+	for _, ep := range c.UpdateOld {
+		if len(ep.Targets) == 0 {
+			continue
+		}
+		oldByKey[endpointKey{ep.DNSName, ep.RecordType}] = ep
+	}
+
 	change := &PorkbunChange{
-		Create:             convertToPorkbunRecord(p.logger, recs, c.Create, zone, false),
-		DesiredAfterUpdate: convertToPorkbunRecord(p.logger, recs, c.UpdateNew, zone, false),
-		Delete:             convertToPorkbunRecord(p.logger, recs, c.Delete, zone, true),
+		Create:             convertToPorkbunRecord(p.logger, recs, c.Create, zone, false, nil),
+		DesiredAfterUpdate: convertToPorkbunRecord(p.logger, recs, c.UpdateNew, zone, false, oldByKey),
+		Delete:             convertToPorkbunRecord(p.logger, recs, c.Delete, zone, true, nil),
 	}
 
 	err = p.DeleteDnsRecords(ctx, zone, change.Delete)
@@ -268,7 +279,10 @@ func applyChangesToZone(ctx context.Context, c *plan.Changes, p *PorkbunProvider
 }
 
 // convertToPorkbunRecord transforms a list of endpoints into a list of Porkbun DNS records.
-func convertToPorkbunRecord(logger *slog.Logger, recs []pb.Record, endpoints []*endpoint.Endpoint, zoneName string, useStrictMatchForDelete bool) []pb.Record {
+// useStrictMatchForDelete forces name+type+content matching so deletes only target the
+// exact record. For updates the ID is first resolved against the old content (via
+// oldByKey, when available) with a name+type fallback.
+func convertToPorkbunRecord(logger *slog.Logger, recs []pb.Record, endpoints []*endpoint.Endpoint, zoneName string, useStrictMatchForDelete bool, oldByKey map[endpointKey]*endpoint.Endpoint) []pb.Record {
 	records := make([]pb.Record, 0, len(endpoints))
 
 	for _, ep := range endpoints {
@@ -291,17 +305,41 @@ func convertToPorkbunRecord(logger *slog.Logger, recs []pb.Record, endpoints []*
 			target = strings.Trim(ep.Targets[0], "\"")
 		}
 
-		var id = getIDforRecord(fqdn, target, ep.RecordType, recs, useStrictMatchForDelete)
+		var id string
+		if useStrictMatchForDelete {
+			id = getIDforRecord(fqdn, target, ep.RecordType, recs, true)
+		} else if old, ok := oldByKey[endpointKey{ep.DNSName, ep.RecordType}]; ok {
+			// Prefer the record that currently holds the old content...
+			id = getIDforRecord(fqdn, old.Targets[0], ep.RecordType, recs, true)
+			// ...and fall back to name+type matching if it is no longer there.
+			if id == "" {
+				id = getIDforRecord(fqdn, target, ep.RecordType, recs, false)
+			}
+		} else {
+			id = getIDforRecord(fqdn, target, ep.RecordType, recs, false)
+		}
 
-		records = append(records, pb.Record{
+		rec := pb.Record{
 			Type:    ep.RecordType,
 			Name:    recordName, // e.g. subsub.sub
-			TTL:     strconv.FormatInt(int64(ep.RecordTTL), 10),
 			Content: target,
-			ID:      id, // ID from FQDN-Match
-		})
+			ID:      id,
+		}
+		// Only send a TTL when one is explicitly configured. Porkbun's minimum TTL is
+		// determined by account settings (typically 600); sending a lower explicit value
+		// results in HTTP 400, while omitting it (or 0) uses the account default.
+		if ep.RecordTTL > 0 {
+			rec.TTL = strconv.FormatInt(int64(ep.RecordTTL), 10)
+		}
+		records = append(records, rec)
 	}
 	return records
+}
+
+// endpointKey identifies an endpoint by its fully qualified DNS name and record type.
+type endpointKey struct {
+	name       string
+	recordType string
 }
 
 // removeNoopTXTUpdates removes unchanged TXT updates from UpdateNew.
